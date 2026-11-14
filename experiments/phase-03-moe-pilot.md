@@ -1,7 +1,8 @@
 # Phase 3: Sparse MoE architecture pilot
 
-**Status: exploratory architecture sidecar.** This does not replace the thesis's
-primary replay-scheduling question.
+**Status: five-seed exploratory pilot complete.** Results are in
+[`../artifacts/PHASE_03_RESULTS.md`](../artifacts/PHASE_03_RESULTS.md). This
+sidecar does not replace the thesis's primary replay-scheduling question.
 
 ## Question
 

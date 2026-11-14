@@ -1,0 +1,1842 @@
+{
+  "experiment": "Phase 3: dense versus sparse MoE under periodic replay",
+  "scope": "Exploratory architecture pilot. It tests sparse top-1 routing under the Phase 2 periodic replay schedule; it does not test adaptive replay, expert growth, permanent consolidation, or LLM sleep.",
+  "code_commit": "1ad081f",
+  "configuration": {
+    "seeds": [
+      42,
+      43,
+      44,
+      45,
+      46
+    ],
+    "task_order": [
+      [
+        0,
+        1
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        4,
+        5
+      ],
+      [
+        6,
+        7
+      ],
+      [
+        8,
+        9
+      ]
+    ],
+    "epochs_per_task": 3,
+    "batch_size": 128,
+    "memory_capacity": 500,
+    "replay_batch_size": 32,
+    "burst_interval": 25,
+    "burst_steps": 1,
+    "learning_rate": 0.05,
+    "test_classes_masked": false,
+    "replay_schedule": "periodic, no replay during first task",
+    "moe_num_experts": 4,
+    "moe_top_k": 1,
+    "moe_expert_bottleneck": 32,
+    "moe_load_balance_coefficient": 0.01,
+    "moe_load_balance_loss": "num_experts * sum(stop_gradient(load) * mean_router_probability)"
+  },
+  "environment": {
+    "device": "cuda",
+    "torch_version": "2.14.1+cu130",
+    "cuda_version": "13.0",
+    "gpu_name": "Tesla T4"
+  },
+  "runs": {
+    "42": {
+      "methods": {
+        "dense": {
+          "accuracy_matrix": [
+            [
+              0.9990543735224586,
+              null,
+              null,
+              null,
+              null
+            ],
+            [
+              0.7848699763593381,
+              0.9725759059745348,
+              null,
+              null,
+              null
+            ],
+            [
+              0.5049645390070922,
+              0.03281096963761019,
+              0.9909284951974386,
+              null,
+              null
+            ],
+            [
+              0.7328605200945626,
+              0.36092066601371203,
+              0.29829242262540023,
+              0.9909365558912386,
+              null
+            ],
+            [
+              0.789598108747045,
+              0.10528893241919686,
+              0.0,
+              0.3288016112789527,
+              0.9722642460917801
+            ]
+          ],
+          "new_task_accuracy": [
+            0.9990543735224586,
+            0.9725759059745348,
+            0.9909284951974386,
+            0.9909365558912386,
+            0.9722642460917801
+          ],
+          "final_average_accuracy": 0.43919057970739495,
+          "average_forgetting": 0.682451669535119,
+          "incoming_training_examples": 180000,
+          "incoming_optimizer_steps": 1413,
+          "replay_examples": 1376,
+          "replay_bursts": 43,
+          "replay_optimizer_steps": 43,
+          "optimizer_steps": 1456,
+          "replay_buffer_capacity": 500,
+          "monitoring_passes": 0,
+          "replay_burst_positions_by_task": {
+            "0": [],
+            "1": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ],
+            "2": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250
+            ],
+            "3": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ],
+            "4": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ]
+          },
+          "training_and_evaluation_seconds": 24.17496745599965,
+          "peak_gpu_memory_mib": 21.34228515625,
+          "model_profile": {
+            "total_parameters": 269322,
+            "active_parameters_per_example": 269322,
+            "estimated_forward_macs_per_example": 268800,
+            "num_experts": 0,
+            "top_k": 0,
+            "expert_bottleneck": null
+          },
+          "incoming_route_fraction_by_task": null,
+          "normalized_route_entropy_by_task": null,
+          "maximum_expert_load_by_task": null
+        },
+        "sparse_moe": {
+          "accuracy_matrix": [
+            [
+              0.9990543735224586,
+              null,
+              null,
+              null,
+              null
+            ],
+            [
+              0.6865248226950355,
+              0.9696376101860921,
+              null,
+              null,
+              null
+            ],
+            [
+              0.5030732860520094,
+              0.0,
+              0.991462113127001,
+              null,
+              null
+            ],
+            [
+              0.541371158392435,
+              0.38540646425073455,
+              0.22625400213447172,
+              0.9904330312185297,
+              null
+            ],
+            [
+              0.7550827423167848,
+              0.007835455435847209,
+              0.0,
+              0.3423967774420947,
+              0.9742813918305597
+            ]
+          ],
+          "new_task_accuracy": [
+            0.9990543735224586,
+            0.9696376101860921,
+            0.991462113127001,
+            0.9904330312185297,
+            0.9742813918305597
+          ],
+          "final_average_accuracy": 0.4159192734050573,
+          "average_forgetting": 0.7113180382148387,
+          "incoming_training_examples": 180000,
+          "incoming_optimizer_steps": 1413,
+          "replay_examples": 1376,
+          "replay_bursts": 43,
+          "replay_optimizer_steps": 43,
+          "optimizer_steps": 1456,
+          "replay_buffer_capacity": 500,
+          "monitoring_passes": 0,
+          "replay_burst_positions_by_task": {
+            "0": [],
+            "1": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ],
+            "2": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250
+            ],
+            "3": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ],
+            "4": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ]
+          },
+          "training_and_evaluation_seconds": 26.73930320600084,
+          "peak_gpu_memory_mib": 22.2509765625,
+          "model_profile": {
+            "total_parameters": 271246,
+            "active_parameters_per_example": 221230,
+            "estimated_forward_macs_per_example": 220672,
+            "num_experts": 4,
+            "top_k": 1,
+            "expert_bottleneck": 32
+          },
+          "incoming_route_fraction_by_task": [
+            [
+              0.005053296486379787,
+              0.014107119357810238,
+              0.9640479010396105,
+              0.0167916831161995
+            ],
+            [
+              0.0,
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              1.0,
+              0.0
+            ]
+          ],
+          "normalized_route_entropy_by_task": [
+            0.13760084795112787,
+            -0.0,
+            -0.0,
+            -0.0,
+            -0.0
+          ],
+          "maximum_expert_load_by_task": [
+            0.9640479010396105,
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    },
+    "43": {
+      "methods": {
+        "dense": {
+          "accuracy_matrix": [
+            [
+              0.9995271867612293,
+              null,
+              null,
+              null,
+              null
+            ],
+            [
+              0.7040189125295508,
+              0.975024485798237,
+              null,
+              null,
+              null
+            ],
+            [
+              0.4595744680851064,
+              0.20421155729676788,
+              0.9898612593383138,
+              null,
+              null
+            ],
+            [
+              0.6411347517730497,
+              0.32223310479921646,
+              0.2225186766275347,
+              0.9919436052366566,
+              null
+            ],
+            [
+              0.5550827423167849,
+              0.13418217433888344,
+              0.0,
+              0.38821752265861026,
+              0.9737771053958648
+            ]
+          ],
+          "new_task_accuracy": [
+            0.9995271867612293,
+            0.975024485798237,
+            0.9898612593383138,
+            0.9919436052366566,
+            0.9737771053958648
+          ],
+          "final_average_accuracy": 0.41025190894202873,
+          "average_forgetting": 0.7197185244550395,
+          "incoming_training_examples": 180000,
+          "incoming_optimizer_steps": 1413,
+          "replay_examples": 1376,
+          "replay_bursts": 43,
+          "replay_optimizer_steps": 43,
+          "optimizer_steps": 1456,
+          "replay_buffer_capacity": 500,
+          "monitoring_passes": 0,
+          "replay_burst_positions_by_task": {
+            "0": [],
+            "1": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ],
+            "2": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250
+            ],
+            "3": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ],
+            "4": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ]
+          },
+          "training_and_evaluation_seconds": 23.71912663800049,
+          "peak_gpu_memory_mib": 21.34228515625,
+          "model_profile": {
+            "total_parameters": 269322,
+            "active_parameters_per_example": 269322,
+            "estimated_forward_macs_per_example": 268800,
+            "num_experts": 0,
+            "top_k": 0,
+            "expert_bottleneck": null
+          },
+          "incoming_route_fraction_by_task": null,
+          "normalized_route_entropy_by_task": null,
+          "maximum_expert_load_by_task": null
+        },
+        "sparse_moe": {
+          "accuracy_matrix": [
+            [
+              0.9985815602836879,
+              null,
+              null,
+              null,
+              null
+            ],
+            [
+              0.4978723404255319,
+              0.9755142017629774,
+              null,
+              null,
+              null
+            ],
+            [
+              0.45390070921985815,
+              0.0,
+              0.9909284951974386,
+              null,
+              null
+            ],
+            [
+              0.48936170212765956,
+              0.35798237022526935,
+              0.26360725720384204,
+              0.9914400805639476,
+              null
+            ],
+            [
+              0.25342789598108745,
+              0.0,
+              0.0,
+              0.3892245720040282,
+              0.9793242561775088
+            ]
+          ],
+          "new_task_accuracy": [
+            0.9985815602836879,
+            0.9755142017629774,
+            0.9909284951974386,
+            0.9914400805639476,
+            0.9793242561775088
+          ],
+          "final_average_accuracy": 0.3243953448325249,
+          "average_forgetting": 0.8284529674557339,
+          "incoming_training_examples": 180000,
+          "incoming_optimizer_steps": 1413,
+          "replay_examples": 1376,
+          "replay_bursts": 43,
+          "replay_optimizer_steps": 43,
+          "optimizer_steps": 1456,
+          "replay_buffer_capacity": 500,
+          "monitoring_passes": 0,
+          "replay_burst_positions_by_task": {
+            "0": [],
+            "1": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ],
+            "2": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250
+            ],
+            "3": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ],
+            "4": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ]
+          },
+          "training_and_evaluation_seconds": 26.319561249999424,
+          "peak_gpu_memory_mib": 22.2509765625,
+          "model_profile": {
+            "total_parameters": 271246,
+            "active_parameters_per_example": 221230,
+            "estimated_forward_macs_per_example": 220672,
+            "num_experts": 4,
+            "top_k": 1,
+            "expert_bottleneck": 32
+          },
+          "incoming_route_fraction_by_task": [
+            [
+              0.0,
+              0.9868666929859192,
+              0.01287011448874852,
+              0.0002631925253322806
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "normalized_route_entropy_by_task": [
+            0.05138715716602348,
+            -0.0,
+            -0.0,
+            -0.0,
+            -0.0
+          ],
+          "maximum_expert_load_by_task": [
+            0.9868666929859192,
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    },
+    "44": {
+      "methods": {
+        "dense": {
+          "accuracy_matrix": [
+            [
+              0.9995271867612293,
+              null,
+              null,
+              null,
+              null
+            ],
+            [
+              0.7408983451536643,
+              0.9755142017629774,
+              null,
+              null,
+              null
+            ],
+            [
+              0.49976359338061466,
+              0.059745347698334964,
+              0.9898612593383138,
+              null,
+              null
+            ],
+            [
+              0.7309692671394799,
+              0.3388834476003918,
+              0.11739594450373532,
+              0.9899295065458208,
+              null
+            ],
+            [
+              0.7342789598108747,
+              0.15866797257590598,
+              0.0,
+              0.36203423967774423,
+              0.9752899646999496
+            ]
+          ],
+          "new_task_accuracy": [
+            0.9995271867612293,
+            0.9755142017629774,
+            0.9898612593383138,
+            0.9899295065458208,
+            0.9752899646999496
+          ],
+          "final_average_accuracy": 0.4460542273528949,
+          "average_forgetting": 0.6749627455859541,
+          "incoming_training_examples": 180000,
+          "incoming_optimizer_steps": 1413,
+          "replay_examples": 1376,
+          "replay_bursts": 43,
+          "replay_optimizer_steps": 43,
+          "optimizer_steps": 1456,
+          "replay_buffer_capacity": 500,
+          "monitoring_passes": 0,
+          "replay_burst_positions_by_task": {
+            "0": [],
+            "1": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ],
+            "2": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250
+            ],
+            "3": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ],
+            "4": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ]
+          },
+          "training_and_evaluation_seconds": 23.69406691899985,
+          "peak_gpu_memory_mib": 21.34228515625,
+          "model_profile": {
+            "total_parameters": 269322,
+            "active_parameters_per_example": 269322,
+            "estimated_forward_macs_per_example": 268800,
+            "num_experts": 0,
+            "top_k": 0,
+            "expert_bottleneck": null
+          },
+          "incoming_route_fraction_by_task": null,
+          "normalized_route_entropy_by_task": null,
+          "maximum_expert_load_by_task": null
+        },
+        "sparse_moe": {
+          "accuracy_matrix": [
+            [
+              0.9985815602836879,
+              null,
+              null,
+              null,
+              null
+            ],
+            [
+              0.46335697399527187,
+              0.9784524975514202,
+              null,
+              null,
+              null
+            ],
+            [
+              0.4983451536643026,
+              0.0,
+              0.991462113127001,
+              null,
+              null
+            ],
+            [
+              0.3943262411347518,
+              0.04211557296767875,
+              0.054429028815368194,
+              0.9929506545820745,
+              null
+            ],
+            [
+              0.4118203309692671,
+              0.0455435847208619,
+              0.0,
+              0.351460221550856,
+              0.9773071104387292
+            ]
+          ],
+          "new_task_accuracy": [
+            0.9985815602836879,
+            0.9784524975514202,
+            0.991462113127001,
+            0.9929506545820745,
+            0.9773071104387292
+          ],
+          "final_average_accuracy": 0.35722624953594284,
+          "average_forgetting": 0.7881556720757996,
+          "incoming_training_examples": 180000,
+          "incoming_optimizer_steps": 1413,
+          "replay_examples": 1376,
+          "replay_bursts": 43,
+          "replay_optimizer_steps": 43,
+          "optimizer_steps": 1456,
+          "replay_buffer_capacity": 500,
+          "monitoring_passes": 0,
+          "replay_burst_positions_by_task": {
+            "0": [],
+            "1": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ],
+            "2": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250
+            ],
+            "3": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ],
+            "4": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ]
+          },
+          "training_and_evaluation_seconds": 26.16135872199993,
+          "peak_gpu_memory_mib": 22.2509765625,
+          "model_profile": {
+            "total_parameters": 271246,
+            "active_parameters_per_example": 221230,
+            "estimated_forward_macs_per_example": 220672,
+            "num_experts": 4,
+            "top_k": 1,
+            "expert_bottleneck": 32
+          },
+          "incoming_route_fraction_by_task": [
+            [
+              0.015238847216739045,
+              0.9828398473483353,
+              0.00010527701013291222,
+              0.0018160284247927358
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "normalized_route_entropy_by_task": [
+            0.06722624133272276,
+            -0.0,
+            -0.0,
+            -0.0,
+            -0.0
+          ],
+          "maximum_expert_load_by_task": [
+            0.9828398473483353,
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    },
+    "45": {
+      "methods": {
+        "dense": {
+          "accuracy_matrix": [
+            [
+              0.9990543735224586,
+              null,
+              null,
+              null,
+              null
+            ],
+            [
+              0.8113475177304964,
+              0.9676787463271302,
+              null,
+              null,
+              null
+            ],
+            [
+              0.5768321513002365,
+              0.17531831537708129,
+              0.9898612593383138,
+              null,
+              null
+            ],
+            [
+              0.6879432624113475,
+              0.2948090107737512,
+              0.2006403415154749,
+              0.9904330312185297,
+              null
+            ],
+            [
+              0.691725768321513,
+              0.1890303623898139,
+              0.04375667022411953,
+              0.3418932527693857,
+              0.9722642460917801
+            ]
+          ],
+          "new_task_accuracy": [
+            0.9990543735224586,
+            0.9676787463271302,
+            0.9898612593383138,
+            0.9904330312185297,
+            0.9722642460917801
+          ],
+          "final_average_accuracy": 0.4477340599593225,
+          "average_forgetting": 0.6701553391754,
+          "incoming_training_examples": 180000,
+          "incoming_optimizer_steps": 1413,
+          "replay_examples": 1376,
+          "replay_bursts": 43,
+          "replay_optimizer_steps": 43,
+          "optimizer_steps": 1456,
+          "replay_buffer_capacity": 500,
+          "monitoring_passes": 0,
+          "replay_burst_positions_by_task": {
+            "0": [],
+            "1": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ],
+            "2": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250
+            ],
+            "3": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ],
+            "4": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ]
+          },
+          "training_and_evaluation_seconds": 23.692629820000548,
+          "peak_gpu_memory_mib": 21.34228515625,
+          "model_profile": {
+            "total_parameters": 269322,
+            "active_parameters_per_example": 269322,
+            "estimated_forward_macs_per_example": 268800,
+            "num_experts": 0,
+            "top_k": 0,
+            "expert_bottleneck": null
+          },
+          "incoming_route_fraction_by_task": null,
+          "normalized_route_entropy_by_task": null,
+          "maximum_expert_load_by_task": null
+        },
+        "sparse_moe": {
+          "accuracy_matrix": [
+            [
+              0.9990543735224586,
+              null,
+              null,
+              null,
+              null
+            ],
+            [
+              0.8066193853427897,
+              0.9632713026444663,
+              null,
+              null,
+              null
+            ],
+            [
+              0.4690307328605201,
+              0.0,
+              0.9903948772678762,
+              null,
+              null
+            ],
+            [
+              0.09030732860520095,
+              0.2238001958863859,
+              0.23799359658484526,
+              0.9954682779456193,
+              null
+            ],
+            [
+              0.1768321513002364,
+              0.059255631733594515,
+              0.0,
+              0.16012084592145015,
+              0.972768532526475
+            ]
+          ],
+          "new_task_accuracy": [
+            0.9990543735224586,
+            0.9632713026444663,
+            0.9903948772678762,
+            0.9954682779456193,
+            0.972768532526475
+          ],
+          "final_average_accuracy": 0.2737954322963512,
+          "average_forgetting": 0.8879950506062848,
+          "incoming_training_examples": 180000,
+          "incoming_optimizer_steps": 1413,
+          "replay_examples": 1376,
+          "replay_bursts": 43,
+          "replay_optimizer_steps": 43,
+          "optimizer_steps": 1456,
+          "replay_buffer_capacity": 500,
+          "monitoring_passes": 0,
+          "replay_burst_positions_by_task": {
+            "0": [],
+            "1": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ],
+            "2": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250
+            ],
+            "3": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ],
+            "4": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ]
+          },
+          "training_and_evaluation_seconds": 26.030408235999857,
+          "peak_gpu_memory_mib": 22.2509765625,
+          "model_profile": {
+            "total_parameters": 271246,
+            "active_parameters_per_example": 221230,
+            "estimated_forward_macs_per_example": 220672,
+            "num_experts": 4,
+            "top_k": 1,
+            "expert_bottleneck": 32
+          },
+          "incoming_route_fraction_by_task": [
+            [
+              0.02263455717857613,
+              0.9155941571259376,
+              0.04500592183181998,
+              0.016765363863666272
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "normalized_route_entropy_by_task": [
+            0.2702101289075958,
+            -0.0,
+            -0.0,
+            -0.0,
+            -0.0
+          ],
+          "maximum_expert_load_by_task": [
+            0.9155941571259376,
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    },
+    "46": {
+      "methods": {
+        "dense": {
+          "accuracy_matrix": [
+            [
+              0.9990543735224586,
+              null,
+              null,
+              null,
+              null
+            ],
+            [
+              0.8023640661938535,
+              0.9622918707149853,
+              null,
+              null,
+              null
+            ],
+            [
+              0.48652482269503544,
+              0.20666013712047013,
+              0.9903948772678762,
+              null,
+              null
+            ],
+            [
+              0.708274231678487,
+              0.28844270323212534,
+              0.14140875133404482,
+              0.9899295065458208,
+              null
+            ],
+            [
+              0.7163120567375887,
+              0.24681684622918706,
+              0.0,
+              0.3323262839879154,
+              0.9742813918305597
+            ]
+          ],
+          "new_task_accuracy": [
+            0.9990543735224586,
+            0.9622918707149853,
+            0.9903948772678762,
+            0.9899295065458208,
+            0.9742813918305597
+          ],
+          "final_average_accuracy": 0.45394731575705016,
+          "average_forgetting": 0.6615538602741124,
+          "incoming_training_examples": 180000,
+          "incoming_optimizer_steps": 1413,
+          "replay_examples": 1376,
+          "replay_bursts": 43,
+          "replay_optimizer_steps": 43,
+          "optimizer_steps": 1456,
+          "replay_buffer_capacity": 500,
+          "monitoring_passes": 0,
+          "replay_burst_positions_by_task": {
+            "0": [],
+            "1": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ],
+            "2": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250
+            ],
+            "3": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ],
+            "4": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ]
+          },
+          "training_and_evaluation_seconds": 23.033421889999772,
+          "peak_gpu_memory_mib": 21.34228515625,
+          "model_profile": {
+            "total_parameters": 269322,
+            "active_parameters_per_example": 269322,
+            "estimated_forward_macs_per_example": 268800,
+            "num_experts": 0,
+            "top_k": 0,
+            "expert_bottleneck": null
+          },
+          "incoming_route_fraction_by_task": null,
+          "normalized_route_entropy_by_task": null,
+          "maximum_expert_load_by_task": null
+        },
+        "sparse_moe": {
+          "accuracy_matrix": [
+            [
+              0.9990543735224586,
+              null,
+              null,
+              null,
+              null
+            ],
+            [
+              0.7952718676122932,
+              0.9637610186092067,
+              null,
+              null,
+              null
+            ],
+            [
+              0.47848699763593383,
+              0.0014691478942213516,
+              0.991462113127001,
+              null,
+              null
+            ],
+            [
+              0.5541371158392435,
+              0.3623898139079334,
+              0.11899679829242263,
+              0.9924471299093656,
+              null
+            ],
+            [
+              0.46004728132387707,
+              0.12340842311459353,
+              0.0,
+              0.09063444108761329,
+              0.9752899646999496
+            ]
+          ],
+          "new_task_accuracy": [
+            0.9990543735224586,
+            0.9637610186092067,
+            0.991462113127001,
+            0.9924471299093656,
+            0.9752899646999496
+          ],
+          "final_average_accuracy": 0.3298760220452067,
+          "average_forgetting": 0.818158622410487,
+          "incoming_training_examples": 180000,
+          "incoming_optimizer_steps": 1413,
+          "replay_examples": 1376,
+          "replay_bursts": 43,
+          "replay_optimizer_steps": 43,
+          "optimizer_steps": 1456,
+          "replay_buffer_capacity": 500,
+          "monitoring_passes": 0,
+          "replay_burst_positions_by_task": {
+            "0": [],
+            "1": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ],
+            "2": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250
+            ],
+            "3": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ],
+            "4": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ]
+          },
+          "training_and_evaluation_seconds": 26.261689695000314,
+          "peak_gpu_memory_mib": 22.2509765625,
+          "model_profile": {
+            "total_parameters": 271246,
+            "active_parameters_per_example": 221230,
+            "estimated_forward_macs_per_example": 220672,
+            "num_experts": 4,
+            "top_k": 1,
+            "expert_bottleneck": 32
+          },
+          "incoming_route_fraction_by_task": [
+            [
+              0.031346229767074615,
+              0.9660744834846691,
+              0.0003158310303987367,
+              0.002263455717857613
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "normalized_route_entropy_by_task": [
+            0.11412936379541129,
+            -0.0,
+            -0.0,
+            -0.0,
+            -0.0
+          ],
+          "maximum_expert_load_by_task": [
+            0.9660744834846691,
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    }
+  },
+  "methods": {
+    "dense": {
+      "accuracy_matrix": [
+        [
+          0.9992434988179669,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          0.7686997635933807,
+          0.970617042115573,
+          null,
+          null,
+          null
+        ],
+        [
+          0.505531914893617,
+          0.1357492654260529,
+          0.9901814300960513,
+          null,
+          null
+        ],
+        [
+          0.7002364066193854,
+          0.32105778648383937,
+          0.196051227321238,
+          0.9906344410876133,
+          null
+        ],
+        [
+          0.6973995271867612,
+          0.16679725759059744,
+          0.008751334044823906,
+          0.35065458207452166,
+          0.9735753908219869
+        ]
+      ],
+      "accuracy_std_matrix": [
+        [
+          0.00025897047636178104,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          0.04519436730670633,
+          0.005594348510673755,
+          null,
+          null,
+          null
+        ],
+        [
+          0.043562241767143545,
+          0.08314751213426455,
+          0.00047728238580570026,
+          null,
+          null
+        ],
+        [
+          0.03780732444766673,
+          0.03025279579473822,
+          0.07132198391135319,
+          0.0008425579320584625,
+          null
+        ],
+        [
+          0.08732785002764559,
+          0.054338173760854154,
+          0.019568577818034446,
+          0.024651119888490208,
+          0.0013150181351896544
+        ]
+      ],
+      "final_average_accuracy": 0.43943561834373823,
+      "final_average_accuracy_std": 0.01713919790024903,
+      "average_forgetting": 0.681768427805125,
+      "average_forgetting_std": 0.022530460123217123,
+      "mean_new_task_accuracy": 0.9848503605878383,
+      "new_task_accuracy_by_stage": [
+        0.9992434988179669,
+        0.970617042115573,
+        0.9901814300960513,
+        0.9906344410876133,
+        0.9735753908219869
+      ],
+      "incoming_training_examples": 180000,
+      "replay_examples": 1376,
+      "optimizer_steps": 1456,
+      "replay_buffer_capacity": 500,
+      "incoming_optimizer_steps": 1413,
+      "replay_bursts": 43,
+      "replay_optimizer_steps": 43,
+      "monitoring_passes": 0,
+      "mean_training_and_evaluation_seconds": 23.66284254460006,
+      "model_profile": {
+        "total_parameters": 269322,
+        "active_parameters_per_example": 269322,
+        "estimated_forward_macs_per_example": 268800,
+        "num_experts": 0,
+        "top_k": 0,
+        "expert_bottleneck": null
+      }
+    },
+    "sparse_moe": {
+      "accuracy_matrix": [
+        [
+          0.9988652482269503,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          0.6499290780141844,
+          0.9701273261508325,
+          null,
+          null,
+          null
+        ],
+        [
+          0.4805673758865248,
+          0.0002938295788442703,
+          0.9911419423692636,
+          null,
+          null
+        ],
+        [
+          0.41390070921985816,
+          0.2743388834476004,
+          0.18025613660618997,
+          0.9925478348439073,
+          null
+        ],
+        [
+          0.4114420803782506,
+          0.04720861900097943,
+          0.0,
+          0.26676737160120845,
+          0.9757942511346445
+        ]
+      ],
+      "accuracy_std_matrix": [
+        [
+          0.00025897047636178104,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          0.16197687247859427,
+          0.006820954102440767,
+          null,
+          null,
+          null
+        ],
+        [
+          0.02043953639505443,
+          0.0006570229120959225,
+          0.00047728238580570026,
+          null,
+          null
+        ],
+        [
+          0.1915105495676704,
+          0.14453981424799653,
+          0.08941755253929837,
+          0.001897426352609958,
+          null
+        ],
+        [
+          0.2238648110259403,
+          0.049328522983648135,
+          0.0,
+          0.1325563488123123,
+          0.002571366370949488
+        ]
+      ],
+      "final_average_accuracy": 0.3402424644230166,
+      "final_average_accuracy_std": 0.051935611048191756,
+      "average_forgetting": 0.8068160701526288,
+      "average_forgetting_std": 0.06452697157875016,
+      "mean_new_task_accuracy": 0.9856953205451197,
+      "new_task_accuracy_by_stage": [
+        0.9988652482269503,
+        0.9701273261508325,
+        0.9911419423692636,
+        0.9925478348439073,
+        0.9757942511346445
+      ],
+      "incoming_training_examples": 180000,
+      "replay_examples": 1376,
+      "optimizer_steps": 1456,
+      "replay_buffer_capacity": 500,
+      "incoming_optimizer_steps": 1413,
+      "replay_bursts": 43,
+      "replay_optimizer_steps": 43,
+      "monitoring_passes": 0,
+      "mean_training_and_evaluation_seconds": 26.302464221800072,
+      "model_profile": {
+        "total_parameters": 271246,
+        "active_parameters_per_example": 221230,
+        "estimated_forward_macs_per_example": 220672,
+        "num_experts": 4,
+        "top_k": 1,
+        "expert_bottleneck": 32
+      }
+    }
+  },
+  "paired_differences": {
+    "final_average_accuracy": {
+      "sparse_moe_minus_dense_by_seed": {
+        "42": -0.023271306302337647,
+        "43": -0.08585656410950382,
+        "44": -0.08882797781695206,
+        "45": -0.17393862766297125,
+        "46": -0.12407129371184344
+      },
+      "mean": -0.09919315392072164,
+      "std": 0.05535168500972639
+    },
+    "average_forgetting": {
+      "sparse_moe_minus_dense_by_seed": {
+        "42": 0.0288663686797197,
+        "43": 0.10873444300069446,
+        "44": 0.11319292648984547,
+        "45": 0.21783971143088476,
+        "46": 0.15660476213637453
+      },
+      "mean": 0.1250476423475038,
+      "std": 0.06939688764544094
+    }
+  },
+  "routing_summary": {
+    "dense": null,
+    "sparse_moe": {
+      "mean_route_fraction_by_task": [
+        [
+          0.014854586129753915,
+          0.7730964600605343,
+          0.20446900908014212,
+          0.007579944729569681
+        ],
+        [
+          0.0,
+          0.8,
+          0.2,
+          0.0
+        ],
+        [
+          0.0,
+          0.8,
+          0.2,
+          0.0
+        ],
+        [
+          0.0,
+          0.8,
+          0.2,
+          0.0
+        ],
+        [
+          0.0,
+          0.8,
+          0.2,
+          0.0
+        ]
+      ],
+      "route_fraction_std_by_task": [
+        [
+          0.012741408121980215,
+          0.42523550283634565,
+          0.42501228241286637,
+          0.008429868002689583
+        ],
+        [
+          0.0,
+          0.4472135954999579,
+          0.4472135954999579,
+          0.0
+        ],
+        [
+          0.0,
+          0.4472135954999579,
+          0.4472135954999579,
+          0.0
+        ],
+        [
+          0.0,
+          0.4472135954999579,
+          0.4472135954999579,
+          0.0
+        ],
+        [
+          0.0,
+          0.4472135954999579,
+          0.4472135954999579,
+          0.0
+        ]
+      ],
+      "mean_normalized_route_entropy_by_task": [
+        0.12811074783057624,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mean_maximum_expert_load_by_task": [
+        0.9630846163968944,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    }
+  }
+}

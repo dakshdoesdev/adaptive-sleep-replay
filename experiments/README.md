@@ -66,4 +66,6 @@ four-expert top-1 sparse MoE under the same periodic replay schedule. It logs
 router load and entropy alongside parameter and estimated active-compute
 counts. This is an exploratory architecture pilot, not an LLM sleep
 reproduction or a replacement for the replay-scheduling thesis question. See
-[`phase-03-moe-pilot.md`](phase-03-moe-pilot.md) for the frozen comparison.
+[`phase-03-moe-pilot.md`](phase-03-moe-pilot.md) for the comparison and
+[`../artifacts/PHASE_03_RESULTS.md`](../artifacts/PHASE_03_RESULTS.md) for the
+five-seed Tesla T4 results.
