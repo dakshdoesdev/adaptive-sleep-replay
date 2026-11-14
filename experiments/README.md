@@ -48,6 +48,9 @@ bursts with randomly placed bursts at the same per-task burst count and length.
 It is a matched-replay-budget placement test, not a matched-total-compute or
 adaptive-trigger result. The phase protocol and pilot settings are in
 [`phase-02-replay-bursts.md`](phase-02-replay-bursts.md).
+The five-seed Tesla T4 pilot is reported in
+[`../artifacts/PHASE_02_RESULTS.md`](../artifacts/PHASE_02_RESULTS.md), with
+raw metrics and plot alongside it.
 
 ```bash
 python experiments/replay_burst_scheduling.py \

@@ -1,5 +1,8 @@
 # Phase 2: Replay-burst timing under a matched replay budget
 
+**Status: five-seed exploratory pilot complete.** Results are in
+[`../artifacts/PHASE_02_RESULTS.md`](../artifacts/PHASE_02_RESULTS.md).
+
 **Question:** With the same incoming stream, reservoir, replay batch size, and
 number of replay bursts, does periodic placement outperform random placement?
 This isolates replay timing from replay volume before adding a forgetting

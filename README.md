@@ -10,6 +10,6 @@ Start with [the research decision](notes/research-decision.md), then [the beginn
 This is a proposed undergraduate research direction, not a claim of a new algorithm or a completed thesis. Supervisor requirements determine the final format and scope. A negative result can still support a useful thesis if the question, controls, and evidence are sound.
 
 ## Next milestone
-The Split-MNIST sequential-versus-uniform-replay pilots are recorded in [the results report](artifacts/RESULTS.md). They use five seeds and one/three epochs, so they validate baseline behavior but are not a final evaluation. The next controlled comparison is [Phase 2: periodic versus random replay bursts](experiments/phase-02-replay-bursts.md), which holds replay count fixed before adding an adaptive trigger.
+The Split-MNIST sequential-versus-uniform-replay pilots are recorded in [the results report](artifacts/RESULTS.md); the five-seed periodic-versus-random burst pilot is in the [Phase 2 report](artifacts/PHASE_02_RESULTS.md). Both are exploratory, not final evaluation. Next, tune the periodic interval on development streams before testing a fixed-burst forgetting trigger.
 
 The downloaded paper corpus is local-only and is not included in this repository. See the [literature map](notes/literature-map.md) for public source links. Do not treat the pilot as a final thesis result.
