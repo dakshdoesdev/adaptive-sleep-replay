@@ -1,0 +1,821 @@
+{
+  "experiment": "Split-MNIST sequential versus uniform replay pilot",
+  "scope": "Five paired seeds; exploratory pilot, not a final evaluation and not a test of adaptive scheduling or LLM sleep.",
+  "configuration": {
+    "seeds": [
+      42,
+      43,
+      44,
+      45,
+      46
+    ],
+    "task_order": [
+      [
+        0,
+        1
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        4,
+        5
+      ],
+      [
+        6,
+        7
+      ],
+      [
+        8,
+        9
+      ]
+    ],
+    "epochs_per_task": 3,
+    "batch_size": 128,
+    "memory_capacity": 500,
+    "replay_batch_size": 32,
+    "learning_rate": 0.05,
+    "test_classes_masked": false
+  },
+  "environment": {
+    "device": "cuda",
+    "torch_version": "2.14.1+cu130",
+    "cuda_version": "13.0",
+    "gpu_name": "Tesla T4"
+  },
+  "runs": {
+    "42": {
+      "methods": {
+        "sequential": {
+          "accuracy_matrix": [
+            [
+              0.9990543735224586,
+              null,
+              null,
+              null,
+              null
+            ],
+            [
+              0.0,
+              0.9735553379040157,
+              null,
+              null,
+              null
+            ],
+            [
+              0.0,
+              0.0,
+              0.9898612593383138,
+              null,
+              null
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.9939577039274925,
+              null
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.9717599596570852
+            ]
+          ],
+          "new_task_accuracy": [
+            0.9990543735224586,
+            0.9735553379040157,
+            0.9898612593383138,
+            0.9939577039274925,
+            0.9717599596570852
+          ],
+          "final_average_accuracy": 0.19435199193141703,
+          "average_forgetting": 0.9891071686730701,
+          "incoming_training_examples": 180000,
+          "replay_examples": 0,
+          "optimizer_steps": 1413,
+          "replay_buffer_capacity": 0,
+          "training_and_evaluation_seconds": 21.083847086999867,
+          "peak_gpu_memory_mib": 21.23779296875
+        },
+        "uniform_replay": {
+          "accuracy_matrix": [
+            [
+              0.9990543735224586,
+              null,
+              null,
+              null,
+              null
+            ],
+            [
+              0.9423167848699764,
+              0.9715964740450539,
+              null,
+              null,
+              null
+            ],
+            [
+              0.9267139479905437,
+              0.6635651322233105,
+              0.9871931696905016,
+              null,
+              null
+            ],
+            [
+              0.9437352245862884,
+              0.7737512242899118,
+              0.8068303094983992,
+              0.9778449144008057,
+              null
+            ],
+            [
+              0.9219858156028369,
+              0.7350636630754163,
+              0.49092849519743864,
+              0.7371601208459214,
+              0.9581442259203228
+            ]
+          ],
+          "new_task_accuracy": [
+            0.9990543735224586,
+            0.9715964740450539,
+            0.9871931696905016,
+            0.9778449144008057,
+            0.9581442259203228
+          ],
+          "final_average_accuracy": 0.7686564641283872,
+          "average_forgetting": 0.26263770923430163,
+          "incoming_training_examples": 180000,
+          "replay_examples": 45184,
+          "optimizer_steps": 1413,
+          "replay_buffer_capacity": 500,
+          "training_and_evaluation_seconds": 23.28744001599989,
+          "peak_gpu_memory_mib": 21.81103515625
+        }
+      }
+    },
+    "43": {
+      "methods": {
+        "sequential": {
+          "accuracy_matrix": [
+            [
+              0.9995271867612293,
+              null,
+              null,
+              null,
+              null
+            ],
+            [
+              0.0,
+              0.9755142017629774,
+              null,
+              null,
+              null
+            ],
+            [
+              0.0,
+              0.0,
+              0.9898612593383138,
+              null,
+              null
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.9939577039274925,
+              null
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.972768532526475
+            ]
+          ],
+          "new_task_accuracy": [
+            0.9995271867612293,
+            0.9755142017629774,
+            0.9898612593383138,
+            0.9939577039274925,
+            0.972768532526475
+          ],
+          "final_average_accuracy": 0.194553706505295,
+          "average_forgetting": 0.9897150879475033,
+          "incoming_training_examples": 180000,
+          "replay_examples": 0,
+          "optimizer_steps": 1413,
+          "replay_buffer_capacity": 0,
+          "training_and_evaluation_seconds": 21.300599750000174,
+          "peak_gpu_memory_mib": 21.23779296875
+        },
+        "uniform_replay": {
+          "accuracy_matrix": [
+            [
+              0.9995271867612293,
+              null,
+              null,
+              null,
+              null
+            ],
+            [
+              0.9527186761229315,
+              0.9725759059745348,
+              null,
+              null,
+              null
+            ],
+            [
+              0.9451536643026005,
+              0.7081292850146915,
+              0.9775880469583778,
+              null,
+              null
+            ],
+            [
+              0.9319148936170213,
+              0.8021547502448579,
+              0.7556029882604055,
+              0.9768378650553877,
+              null
+            ],
+            [
+              0.924822695035461,
+              0.7722820763956905,
+              0.6985058697972252,
+              0.7613293051359517,
+              0.9430156328794755
+            ]
+          ],
+          "new_task_accuracy": [
+            0.9995271867612293,
+            0.9725759059745348,
+            0.9775880469583778,
+            0.9768378650553877,
+            0.9430156328794755
+          ],
+          "final_average_accuracy": 0.8199911158487607,
+          "average_forgetting": 0.19239726459630033,
+          "incoming_training_examples": 180000,
+          "replay_examples": 45184,
+          "optimizer_steps": 1413,
+          "replay_buffer_capacity": 500,
+          "training_and_evaluation_seconds": 23.477870652000092,
+          "peak_gpu_memory_mib": 21.81103515625
+        }
+      }
+    },
+    "44": {
+      "methods": {
+        "sequential": {
+          "accuracy_matrix": [
+            [
+              0.9995271867612293,
+              null,
+              null,
+              null,
+              null
+            ],
+            [
+              0.0,
+              0.9755142017629774,
+              null,
+              null,
+              null
+            ],
+            [
+              0.0,
+              0.0,
+              0.9887940234791889,
+              null,
+              null
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.9949647532729103,
+              null
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.9737771053958648
+            ]
+          ],
+          "new_task_accuracy": [
+            0.9995271867612293,
+            0.9755142017629774,
+            0.9887940234791889,
+            0.9949647532729103,
+            0.9737771053958648
+          ],
+          "final_average_accuracy": 0.19475542107917296,
+          "average_forgetting": 0.9897000413190765,
+          "incoming_training_examples": 180000,
+          "replay_examples": 0,
+          "optimizer_steps": 1413,
+          "replay_buffer_capacity": 0,
+          "training_and_evaluation_seconds": 20.92359371800012,
+          "peak_gpu_memory_mib": 21.23779296875
+        },
+        "uniform_replay": {
+          "accuracy_matrix": [
+            [
+              0.9990543735224586,
+              null,
+              null,
+              null,
+              null
+            ],
+            [
+              0.9432624113475178,
+              0.9725759059745348,
+              null,
+              null,
+              null
+            ],
+            [
+              0.9484633569739953,
+              0.7125367286973555,
+              0.9845250800426895,
+              null,
+              null
+            ],
+            [
+              0.9451536643026005,
+              0.806562193927522,
+              0.6584845250800427,
+              0.9823766364551864,
+              null
+            ],
+            [
+              0.941371158392435,
+              0.7468168462291871,
+              0.5330843116328708,
+              0.8152064451158106,
+              0.9520927887039838
+            ]
+          ],
+          "new_task_accuracy": [
+            0.9990543735224586,
+            0.9725759059745348,
+            0.9845250800426895,
+            0.9823766364551864,
+            0.9520927887039838
+          ],
+          "final_average_accuracy": 0.7977143100148575,
+          "average_forgetting": 0.22551330865614141,
+          "incoming_training_examples": 180000,
+          "replay_examples": 45184,
+          "optimizer_steps": 1413,
+          "replay_buffer_capacity": 500,
+          "training_and_evaluation_seconds": 23.314107217000128,
+          "peak_gpu_memory_mib": 21.81103515625
+        }
+      }
+    },
+    "45": {
+      "methods": {
+        "sequential": {
+          "accuracy_matrix": [
+            [
+              0.9990543735224586,
+              null,
+              null,
+              null,
+              null
+            ],
+            [
+              0.0,
+              0.9676787463271302,
+              null,
+              null,
+              null
+            ],
+            [
+              0.0,
+              0.0,
+              0.9909284951974386,
+              null,
+              null
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.9954682779456193,
+              null
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.972768532526475
+            ]
+          ],
+          "new_task_accuracy": [
+            0.9990543735224586,
+            0.9676787463271302,
+            0.9909284951974386,
+            0.9954682779456193,
+            0.972768532526475
+          ],
+          "final_average_accuracy": 0.194553706505295,
+          "average_forgetting": 0.9882824732481617,
+          "incoming_training_examples": 180000,
+          "replay_examples": 0,
+          "optimizer_steps": 1413,
+          "replay_buffer_capacity": 0,
+          "training_and_evaluation_seconds": 21.34765466500039,
+          "peak_gpu_memory_mib": 21.23779296875
+        },
+        "uniform_replay": {
+          "accuracy_matrix": [
+            [
+              0.9990543735224586,
+              null,
+              null,
+              null,
+              null
+            ],
+            [
+              0.9527186761229315,
+              0.9662095984329089,
+              null,
+              null,
+              null
+            ],
+            [
+              0.9385342789598109,
+              0.6699314397649363,
+              0.9850586979722519,
+              null,
+              null
+            ],
+            [
+              0.9460992907801419,
+              0.8188050930460333,
+              0.6419423692636073,
+              0.973313192346425,
+              null
+            ],
+            [
+              0.9371158392434988,
+              0.7610186092066601,
+              0.5987193169690501,
+              0.7693856998992951,
+              0.9450327786182552
+            ]
+          ],
+          "new_task_accuracy": [
+            0.9990543735224586,
+            0.9662095984329089,
+            0.9850586979722519,
+            0.973313192346425,
+            0.9450327786182552
+          ],
+          "final_average_accuracy": 0.802254448787352,
+          "average_forgetting": 0.21434909923888507,
+          "incoming_training_examples": 180000,
+          "replay_examples": 45184,
+          "optimizer_steps": 1413,
+          "replay_buffer_capacity": 500,
+          "training_and_evaluation_seconds": 23.587903094000012,
+          "peak_gpu_memory_mib": 21.81103515625
+        }
+      }
+    },
+    "46": {
+      "methods": {
+        "sequential": {
+          "accuracy_matrix": [
+            [
+              0.9990543735224586,
+              null,
+              null,
+              null,
+              null
+            ],
+            [
+              0.0,
+              0.9671890303623898,
+              null,
+              null,
+              null
+            ],
+            [
+              0.0,
+              0.0,
+              0.9898612593383138,
+              null,
+              null
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.9939577039274925,
+              null
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.9722642460917801
+            ]
+          ],
+          "new_task_accuracy": [
+            0.9990543735224586,
+            0.9671890303623898,
+            0.9898612593383138,
+            0.9939577039274925,
+            0.9722642460917801
+          ],
+          "final_average_accuracy": 0.194452849218356,
+          "average_forgetting": 0.9875155917876637,
+          "incoming_training_examples": 180000,
+          "replay_examples": 0,
+          "optimizer_steps": 1413,
+          "replay_buffer_capacity": 0,
+          "training_and_evaluation_seconds": 20.910300629000176,
+          "peak_gpu_memory_mib": 21.23779296875
+        },
+        "uniform_replay": {
+          "accuracy_matrix": [
+            [
+              0.9990543735224586,
+              null,
+              null,
+              null,
+              null
+            ],
+            [
+              0.9513002364066194,
+              0.9720861900097943,
+              null,
+              null,
+              null
+            ],
+            [
+              0.9361702127659575,
+              0.7042115572967679,
+              0.9871931696905016,
+              null,
+              null
+            ],
+            [
+              0.908274231678487,
+              0.816356513222331,
+              0.7646744930629669,
+              0.9748237663645518,
+              null
+            ],
+            [
+              0.9210401891252955,
+              0.7360430950048972,
+              0.5245464247598719,
+              0.7633434038267876,
+              0.9586485123550177
+            ]
+          ],
+          "new_task_accuracy": [
+            0.9990543735224586,
+            0.9720861900097943,
+            0.9871931696905016,
+            0.9748237663645518,
+            0.9586485123550177
+          ],
+          "final_average_accuracy": 0.780724325014374,
+          "average_forgetting": 0.24704609671761357,
+          "incoming_training_examples": 180000,
+          "replay_examples": 45184,
+          "optimizer_steps": 1413,
+          "replay_buffer_capacity": 500,
+          "training_and_evaluation_seconds": 23.041008229,
+          "peak_gpu_memory_mib": 21.81103515625
+        }
+      }
+    }
+  },
+  "methods": {
+    "sequential": {
+      "accuracy_matrix": [
+        [
+          0.9992434988179669,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          0.0,
+          0.9718903036238982,
+          null,
+          null,
+          null
+        ],
+        [
+          0.0,
+          0.0,
+          0.9898612593383138,
+          null,
+          null
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.9944612286002015,
+          null
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.972667675239536
+        ]
+      ],
+      "accuracy_std_matrix": [
+        [
+          0.00025897047636178104,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          0.0,
+          0.004149602382823672,
+          null,
+          null,
+          null
+        ],
+        [
+          0.0,
+          0.0,
+          0.000754649713112655,
+          null,
+          null
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0007120914211344503,
+          null
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0007479776588094539
+        ]
+      ],
+      "final_average_accuracy": 0.19453353504790719,
+      "final_average_accuracy_std": 0.00014959553176189077,
+      "average_forgetting": 0.988864072595095,
+      "average_forgetting_std": 0.0009537851997437242,
+      "mean_new_task_accuracy": 0.9856247931239832,
+      "new_task_accuracy_by_stage": [
+        0.9992434988179669,
+        0.9718903036238982,
+        0.9898612593383138,
+        0.9944612286002015,
+        0.972667675239536
+      ],
+      "incoming_training_examples": 180000,
+      "replay_examples": 0,
+      "optimizer_steps": 1413,
+      "replay_buffer_capacity": 0,
+      "mean_training_and_evaluation_seconds": 21.113199169800147
+    },
+    "uniform_replay": {
+      "accuracy_matrix": [
+        [
+          0.9991489361702127,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          0.9484633569739953,
+          0.9710088148873653,
+          null,
+          null,
+          null
+        ],
+        [
+          0.9390070921985816,
+          0.6916748285994123,
+          0.9843116328708644,
+          null,
+          null
+        ],
+        [
+          0.9350354609929078,
+          0.8035259549461312,
+          0.7255069370330843,
+          0.9770392749244713,
+          null
+        ],
+        [
+          0.9292671394799055,
+          0.7502448579823702,
+          0.5691568836712914,
+          0.7692849949647532,
+          0.951386787695411
+        ]
+      ],
+      "accuracy_std_matrix": [
+        [
+          0.00021144850851061872,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          0.00522239291592779,
+          0.0027133976840735003,
+          null,
+          null,
+          null
+        ],
+        [
+          0.008464545527171718,
+          0.023054650108025022,
+          0.003950214626109265,
+          null,
+          null
+        ],
+        [
+          0.01601853293473172,
+          0.01799797781620314,
+          0.07163867905061239,
+          0.003462990707764255,
+          null
+        ],
+        [
+          0.009334918823611203,
+          0.016168045072692608,
+          0.08218287828870127,
+          0.028457831824093394,
+          0.007234357575564027
+        ]
+      ],
+      "final_average_accuracy": 0.7938681327587462,
+      "final_average_accuracy_std": 0.0198489391321445,
+      "average_forgetting": 0.2283886956886484,
+      "average_forgetting_std": 0.027485699796167305,
+      "mean_new_task_accuracy": 0.976579089309665,
+      "new_task_accuracy_by_stage": [
+        0.9991489361702127,
+        0.9710088148873653,
+        0.9843116328708644,
+        0.9770392749244713,
+        0.951386787695411
+      ],
+      "incoming_training_examples": 180000,
+      "replay_examples": 45184,
+      "optimizer_steps": 1413,
+      "replay_buffer_capacity": 500,
+      "mean_training_and_evaluation_seconds": 23.341665841600026
+    }
+  },
+  "paired_differences": {
+    "final_average_accuracy": {
+      "uniform_replay_minus_sequential_by_seed": {
+        "42": 0.5743044721969701,
+        "43": 0.6254374093434657,
+        "44": 0.6029588889356845,
+        "45": 0.607700742282057,
+        "46": 0.586271475796018
+      },
+      "mean": 0.5993345977108391,
+      "std": 0.019758776368989234
+    },
+    "average_forgetting": {
+      "uniform_replay_minus_sequential_by_seed": {
+        "42": -0.7264694594387685,
+        "43": -0.7973178233512029,
+        "44": -0.7641867326629351,
+        "45": -0.7739333740092766,
+        "46": -0.7404694950700501
+      },
+      "mean": -0.7604753769064466,
+      "std": 0.027878734899902356
+    }
+  }
+}

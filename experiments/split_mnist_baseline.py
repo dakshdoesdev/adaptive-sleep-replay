@@ -411,8 +411,8 @@ def main() -> None:
     results: dict[str, Any] = {
         "experiment": "Split-MNIST sequential versus uniform replay pilot",
         "scope": (
-            "One paired seed for baseline debugging; not a final evaluation and "
-            "not a test of adaptive scheduling or LLM sleep."
+            "Exploratory paired-seed baseline; not a final evaluation and not a "
+            "test of adaptive scheduling or LLM sleep."
         ),
         "configuration": {
             "seeds": seeds,
