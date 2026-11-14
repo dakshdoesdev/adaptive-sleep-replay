@@ -58,3 +58,12 @@ python experiments/replay_burst_scheduling.py \
   --out artifacts/phase_02_replay_bursts.json \
   --plot artifacts/phase_02_replay_bursts.png
 ```
+
+## Phase 3: sparse MoE architecture sidecar
+
+[`moe_split_mnist.py`](moe_split_mnist.py) compares a dense classifier with a
+four-expert top-1 sparse MoE under the same periodic replay schedule. It logs
+router load and entropy alongside parameter and estimated active-compute
+counts. This is an exploratory architecture pilot, not an LLM sleep
+reproduction or a replacement for the replay-scheduling thesis question. See
+[`phase-03-moe-pilot.md`](phase-03-moe-pilot.md) for the frozen comparison.
