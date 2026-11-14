@@ -62,7 +62,7 @@ class SparseMoEClassifier(nn.Module):
         self.num_experts = num_experts
         self.bottleneck = bottleneck
 
-    def forward_with_auxiliary(
+    def _forward_components(
         self, images: torch.Tensor
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         hidden = F.relu(self.input_layer(images.flatten(start_dim=1)))
@@ -79,14 +79,20 @@ class SparseMoEClassifier(nn.Module):
             selected = selected * selected_gates.index_select(0, token_indices)
             expert_outputs = expert_outputs.index_copy(0, token_indices, selected)
 
+        logits = self.output_layer(F.relu(expert_outputs))
+        return logits, probabilities, routes
+
+    def forward_with_auxiliary(
+        self, images: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        logits, probabilities, routes = self._forward_components(images)
         importance = probabilities.mean(dim=0)
         load = F.one_hot(routes, num_classes=self.num_experts).float().mean(dim=0)
         auxiliary_loss = self.num_experts * torch.sum(load.detach() * importance)
-        logits = self.output_layer(F.relu(expert_outputs))
         return logits, auxiliary_loss, routes
 
     def forward(self, images: torch.Tensor) -> torch.Tensor:
-        return self.forward_with_auxiliary(images)[0]
+        return self._forward_components(images)[0]
 
     def parameter_profile(self) -> dict[str, int | float]:
         total_parameters = sum(parameter.numel() for parameter in self.parameters())
