@@ -1,11 +1,14 @@
 import random
+import tempfile
 import unittest
+from pathlib import Path
 
 import torch
 
 from split_mnist_baseline import (
     _reservoir_add,
     aggregate_runs,
+    make_plot,
     summarize_accuracy,
 )
 
@@ -72,6 +75,11 @@ class BaselineMetricTests(unittest.TestCase):
         self.assertAlmostEqual(
             result["methods"]["uniform_replay"]["final_average_accuracy"], 0.65
         )
+        result["configuration"] = {"seeds": [1, 2]}
+        with tempfile.TemporaryDirectory() as directory:
+            plot = Path(directory) / "pilot.png"
+            make_plot(result, plot)
+            self.assertTrue(plot.is_file())
 
 
 if __name__ == "__main__":

@@ -372,7 +372,7 @@ def make_plot(results: dict[str, Any], out_path: Path) -> None:
     axes[1].tick_params(axis="x", rotation=12)
     axes[1].legend()
     fig.suptitle(
-        f"Split-MNIST pilot ({len(results['seeds'])} paired seed(s); "
+        f"Split-MNIST pilot ({len(results['configuration']['seeds'])} paired seed(s); "
         "replay adds training work)"
     )
     fig.tight_layout()
