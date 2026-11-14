@@ -18,6 +18,14 @@ Run in Colab or another environment with PyTorch, torchvision, and matplotlib:
 python experiments/split_mnist_baseline.py
 ```
 
+For a paired multi-seed pilot:
+
+```bash
+python experiments/split_mnist_baseline.py --epochs 1 --seeds 42 43 44 45 46 \
+  --out artifacts/split_mnist_five_seed.json \
+  --plot artifacts/split_mnist_five_seed.png
+```
+
 MNIST is downloaded to `data/mnist/`. The script writes JSON metrics and a PNG
 plot under `artifacts/`. Do not commit the downloaded dataset. The default
 run trains on all MNIST training examples for three epochs per task.

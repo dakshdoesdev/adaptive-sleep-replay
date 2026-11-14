@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import random
+import statistics
 import time
 from pathlib import Path
 from typing import Any
@@ -54,6 +55,75 @@ def summarize_accuracy(matrix: list[list[float | None]]) -> dict[str, float]:
         "final_average_accuracy": sum(final) / len(final),
         "average_forgetting": sum(forgetting) / len(forgetting) if forgetting else 0.0,
     }
+
+
+def aggregate_runs(runs: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    methods = {}
+    for method in METHODS:
+        entries = [run["methods"][method] for run in runs.values()]
+        matrices = [entry["accuracy_matrix"] for entry in entries]
+        mean_matrix: list[list[float | None]] = []
+        std_matrix: list[list[float | None]] = []
+        for stage in range(len(TASKS)):
+            mean_row: list[float | None] = []
+            std_row: list[float | None] = []
+            for task_index in range(len(TASKS)):
+                scores = [
+                    matrix[stage][task_index]
+                    for matrix in matrices
+                    if matrix[stage][task_index] is not None
+                ]
+                mean_row.append(statistics.mean(scores) if scores else None)
+                std_row.append(statistics.stdev(scores) if len(scores) > 1 else None)
+            mean_matrix.append(mean_row)
+            std_matrix.append(std_row)
+
+        result: dict[str, Any] = {
+            "accuracy_matrix": mean_matrix,
+            "accuracy_std_matrix": std_matrix,
+        }
+        for metric in ("final_average_accuracy", "average_forgetting"):
+            values = [entry[metric] for entry in entries]
+            result[metric] = statistics.mean(values)
+            result[f"{metric}_std"] = (
+                statistics.stdev(values) if len(values) > 1 else None
+            )
+        new_task_values = [
+            score for entry in entries for score in entry["new_task_accuracy"]
+        ]
+        result["mean_new_task_accuracy"] = statistics.mean(new_task_values)
+        result["new_task_accuracy_by_stage"] = [
+            statistics.mean(entry["new_task_accuracy"][stage] for entry in entries)
+            for stage in range(len(TASKS))
+        ]
+        for metric in (
+            "incoming_training_examples",
+            "replay_examples",
+            "optimizer_steps",
+            "replay_buffer_capacity",
+        ):
+            values = {entry[metric] for entry in entries}
+            if len(values) != 1:
+                raise ValueError(f"{metric} differs across paired seeds: {values}")
+            result[metric] = values.pop()
+        result["mean_training_and_evaluation_seconds"] = statistics.mean(
+            entry["training_and_evaluation_seconds"] for entry in entries
+        )
+        methods[method] = result
+
+    paired_differences = {}
+    for metric in ("final_average_accuracy", "average_forgetting"):
+        deltas = {
+            seed: runs[seed]["methods"]["uniform_replay"][metric]
+            - runs[seed]["methods"]["sequential"][metric]
+            for seed in runs
+        }
+        paired_differences[metric] = {
+            "uniform_replay_minus_sequential_by_seed": deltas,
+            "mean": statistics.mean(deltas.values()),
+            "std": statistics.stdev(deltas.values()) if len(deltas) > 1 else None,
+        }
+    return {"methods": methods, "paired_differences": paired_differences}
 
 
 def _sync(device: torch.device) -> None:
@@ -265,11 +335,21 @@ def make_plot(results: dict[str, Any], out_path: Path) -> None:
     ]
     positions = range(len(METHODS))
     width = 0.36
+    accuracy_errors = [
+        results["methods"][method]["final_average_accuracy_std"] or 0
+        for method in METHODS
+    ]
+    forgetting_errors = [
+        results["methods"][method]["average_forgetting_std"] or 0
+        for method in METHODS
+    ]
     axes[1].bar(
         [position - width / 2 for position in positions],
         averages,
         width,
         color=[colors[method] for method in METHODS],
+        yerr=[value * 100 for value in accuracy_errors],
+        capsize=4,
         label="Final average accuracy",
     )
     axes[1].bar(
@@ -278,6 +358,8 @@ def make_plot(results: dict[str, Any], out_path: Path) -> None:
         width,
         color=[colors[method] for method in METHODS],
         alpha=0.4,
+        yerr=[value * 100 for value in forgetting_errors],
+        capsize=4,
         label="Average forgetting",
     )
     axes[1].set(
@@ -289,7 +371,10 @@ def make_plot(results: dict[str, Any], out_path: Path) -> None:
     )
     axes[1].tick_params(axis="x", rotation=12)
     axes[1].legend()
-    fig.suptitle("Split-MNIST pilot (one paired seed; replay adds training work)")
+    fig.suptitle(
+        f"Split-MNIST pilot ({len(results['seeds'])} paired seed(s); "
+        "replay adds training work)"
+    )
     fig.tight_layout()
     fig.savefig(out_path, dpi=160)
     plt.close(fig)
@@ -301,6 +386,7 @@ def main() -> None:
     parser.add_argument("--out", default="artifacts/split_mnist_pilot.json")
     parser.add_argument("--plot", default="artifacts/split_mnist_pilot.png")
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--seeds", nargs="+", type=int)
     parser.add_argument("--epochs", type=int, default=3)
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--replay-batch-size", type=int, default=32)
@@ -312,6 +398,9 @@ def main() -> None:
         parser.error("epochs, batch size, and memory capacity must be positive")
     if args.replay_batch_size < 1:
         parser.error("replay batch size must be positive")
+    seeds = args.seeds or [args.seed]
+    if len(set(seeds)) != len(seeds):
+        parser.error("seeds must be unique")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.backends.cudnn.deterministic = True
@@ -326,7 +415,7 @@ def main() -> None:
             "not a test of adaptive scheduling or LLM sleep."
         ),
         "configuration": {
-            "seed": args.seed,
+            "seeds": seeds,
             "task_order": TASKS,
             "epochs_per_task": args.epochs,
             "batch_size": args.batch_size,
@@ -341,24 +430,28 @@ def main() -> None:
             "cuda_version": torch.version.cuda,
             "gpu_name": torch.cuda.get_device_name(device) if device.type == "cuda" else None,
         },
-        "methods": {},
+        "runs": {},
     }
 
-    for method in METHODS:
-        if device.type == "cuda":
-            torch.cuda.reset_peak_memory_stats(device)
-        results["methods"][method] = run_method(
-            method,
-            train_data,
-            test_data,
-            device,
-            args.seed,
-            args.epochs,
-            args.batch_size,
-            args.replay_batch_size,
-            args.memory_capacity,
-            args.learning_rate,
-        )
+    for seed in seeds:
+        run = {"methods": {}}
+        for method in METHODS:
+            if device.type == "cuda":
+                torch.cuda.reset_peak_memory_stats(device)
+            run["methods"][method] = run_method(
+                method,
+                train_data,
+                test_data,
+                device,
+                seed,
+                args.epochs,
+                args.batch_size,
+                args.replay_batch_size,
+                args.memory_capacity,
+                args.learning_rate,
+            )
+        results["runs"][str(seed)] = run
+    results.update(aggregate_runs(results["runs"]))
 
     out_path = Path(args.out)
     plot_path = Path(args.plot)
