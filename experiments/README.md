@@ -40,3 +40,18 @@ run trains on all MNIST training examples for three epochs per task.
 Before thesis claims, extend this pilot with multiple paired seeds,
 development-only tuning, matched-compute comparisons, trigger monitoring
 costs, and held-out final evaluation as specified in `protocol.md`.
+
+## Phase 2: replay-burst timing
+
+[`replay_burst_scheduling.py`](replay_burst_scheduling.py) compares periodic
+bursts with randomly placed bursts at the same per-task burst count and length.
+It is a matched-replay-budget placement test, not a matched-total-compute or
+adaptive-trigger result. The phase protocol and pilot settings are in
+[`phase-02-replay-bursts.md`](phase-02-replay-bursts.md).
+
+```bash
+python experiments/replay_burst_scheduling.py \
+  --epochs 3 --seeds 42 43 44 45 46 \
+  --out artifacts/phase_02_replay_bursts.json \
+  --plot artifacts/phase_02_replay_bursts.png
+```

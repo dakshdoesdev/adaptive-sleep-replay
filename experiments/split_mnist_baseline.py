@@ -57,9 +57,13 @@ def summarize_accuracy(matrix: list[list[float | None]]) -> dict[str, float]:
     }
 
 
-def aggregate_runs(runs: dict[str, dict[str, Any]]) -> dict[str, Any]:
+def aggregate_runs(
+    runs: dict[str, dict[str, Any]],
+    methods_to_aggregate: tuple[str, ...] = METHODS,
+    comparison: tuple[str, str] = ("sequential", "uniform_replay"),
+) -> dict[str, Any]:
     methods = {}
-    for method in METHODS:
+    for method in methods_to_aggregate:
         entries = [run["methods"][method] for run in runs.values()]
         matrices = [entry["accuracy_matrix"] for entry in entries]
         mean_matrix: list[list[float | None]] = []
@@ -106,20 +110,38 @@ def aggregate_runs(runs: dict[str, dict[str, Any]]) -> dict[str, Any]:
             if len(values) != 1:
                 raise ValueError(f"{metric} differs across paired seeds: {values}")
             result[metric] = values.pop()
+        for metric in (
+            "incoming_optimizer_steps",
+            "replay_bursts",
+            "replay_optimizer_steps",
+            "monitoring_passes",
+        ):
+            present = [metric in entry for entry in entries]
+            if any(present) and not all(present):
+                raise ValueError(f"{metric} is missing from some paired seeds")
+            if all(present):
+                values = {entry[metric] for entry in entries}
+                if len(values) != 1:
+                    raise ValueError(
+                        f"{metric} differs across paired seeds: {values}"
+                    )
+                result[metric] = values.pop()
         result["mean_training_and_evaluation_seconds"] = statistics.mean(
             entry["training_and_evaluation_seconds"] for entry in entries
         )
         methods[method] = result
 
     paired_differences = {}
+    reference, candidate = comparison
+    difference_name = f"{candidate}_minus_{reference}_by_seed"
     for metric in ("final_average_accuracy", "average_forgetting"):
         deltas = {
-            seed: runs[seed]["methods"]["uniform_replay"][metric]
-            - runs[seed]["methods"]["sequential"][metric]
+            seed: runs[seed]["methods"][candidate][metric]
+            - runs[seed]["methods"][reference][metric]
             for seed in runs
         }
         paired_differences[metric] = {
-            "uniform_replay_minus_sequential_by_seed": deltas,
+            difference_name: deltas,
             "mean": statistics.mean(deltas.values()),
             "std": statistics.stdev(deltas.values()) if len(deltas) > 1 else None,
         }
