@@ -1,0 +1,151 @@
+{
+  "experiment": "Split-MNIST sequential versus uniform replay pilot",
+  "scope": "One paired seed for baseline debugging; not a final evaluation and not a test of adaptive scheduling or LLM sleep.",
+  "configuration": {
+    "seed": 42,
+    "task_order": [
+      [
+        0,
+        1
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        4,
+        5
+      ],
+      [
+        6,
+        7
+      ],
+      [
+        8,
+        9
+      ]
+    ],
+    "epochs_per_task": 1,
+    "batch_size": 128,
+    "memory_capacity": 500,
+    "replay_batch_size": 32,
+    "learning_rate": 0.05,
+    "test_classes_masked": false
+  },
+  "environment": {
+    "device": "cpu",
+    "torch_version": "2.14.1+cpu",
+    "cuda_version": null,
+    "gpu_name": null
+  },
+  "methods": {
+    "sequential": {
+      "accuracy_matrix": [
+        [
+          0.9990543735224586,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          0.0,
+          0.9618021547502449,
+          null,
+          null,
+          null
+        ],
+        [
+          0.0,
+          0.0,
+          0.9802561366061899,
+          null,
+          null
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.9934541792547835,
+          null
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.9611699445284921
+        ]
+      ],
+      "new_task_accuracy": [
+        0.9990543735224586,
+        0.9618021547502449,
+        0.9802561366061899,
+        0.9934541792547835,
+        0.9611699445284921
+      ],
+      "final_average_accuracy": 0.19223398890569843,
+      "average_forgetting": 0.9836417110334192,
+      "incoming_training_examples": 60000,
+      "replay_examples": 0,
+      "optimizer_steps": 471,
+      "replay_buffer_capacity": 0,
+      "training_and_evaluation_seconds": 11.89578106800002,
+      "peak_gpu_memory_mib": null
+    },
+    "uniform_replay": {
+      "accuracy_matrix": [
+        [
+          0.9990543735224586,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          0.9196217494089834,
+          0.9573947110675808,
+          null,
+          null,
+          null
+        ],
+        [
+          0.8973995271867612,
+          0.2761998041136141,
+          0.9738527214514408,
+          null,
+          null
+        ],
+        [
+          0.9167848699763593,
+          0.545543584720862,
+          0.5741728922091782,
+          0.973816717019134,
+          null
+        ],
+        [
+          0.9191489361702128,
+          0.5122428991185113,
+          0.2678762006403415,
+          0.5458207452165156,
+          0.9505799293998991
+        ]
+      ],
+      "new_task_accuracy": [
+        0.9990543735224586,
+        0.9573947110675808,
+        0.9738527214514408,
+        0.973816717019134,
+        0.9505799293998991
+      ],
+      "final_average_accuracy": 0.639133742109096,
+      "average_forgetting": 0.41475743547875826,
+      "incoming_training_examples": 60000,
+      "replay_examples": 15040,
+      "optimizer_steps": 471,
+      "replay_buffer_capacity": 500,
+      "training_and_evaluation_seconds": 13.03688497799999,
+      "peak_gpu_memory_mib": null
+    }
+  }
+}

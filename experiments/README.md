@@ -9,6 +9,8 @@ The pilot uses one paired seed to verify the pipeline and show whether
 sequential learning forgets earlier digit pairs. Uniform replay adds 32
 remembered examples to each incoming minibatch, so it performs more work.
 This pilot does not claim a compute-matched comparison or a general result.
+The measured CPU pilot and its interpretation are in
+[`../artifacts/RESULTS.md`](../artifacts/RESULTS.md).
 
 Run in Colab or another environment with PyTorch, torchvision, and matplotlib:
 
