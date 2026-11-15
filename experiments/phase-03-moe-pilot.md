@@ -1,8 +1,11 @@
 # Phase 3: Sparse MoE architecture pilot
 
-**Status: five-seed exploratory pilot complete.** Results are in
-[`../artifacts/PHASE_03_RESULTS.md`](../artifacts/PHASE_03_RESULTS.md). This
-sidecar does not replace the thesis's primary replay-scheduling question.
+**Status: original five-seed pilot complete; compute-matched diagnostic
+follow-up pending.** Original results are in
+[`../artifacts/PHASE_03_RESULTS.md`](../artifacts/PHASE_03_RESULTS.md); the
+follow-up is specified in
+[`phase-03-moe-diagnostic.md`](phase-03-moe-diagnostic.md). This sidecar does
+not replace the thesis's primary replay-scheduling question.
 
 ## Question
 
@@ -18,7 +21,7 @@ that MoE prevents catastrophic forgetting.
 
 - Dense baseline: existing `DigitMLP`.
 - Sparse MoE: shared input/output layers plus a learned top-1 router and four
-  256→32→256 ReLU experts. A Switch-style load-balancing auxiliary loss uses
+  256→32→256 ReLU experts in the original pilot. A Switch-style load-balancing auxiliary loss uses
   coefficient `0.01`.
 - Both use the same Split-MNIST order, paired seeds, incoming stream,
   reservoir, periodic `k=25` replay schedule, replay batch size, SGD settings,

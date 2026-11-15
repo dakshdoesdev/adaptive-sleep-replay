@@ -34,9 +34,10 @@ from split_mnist_baseline import (
 
 ARCHITECTURES = ("dense", "sparse_moe")
 NUM_EXPERTS = 4
-MOE_BOTTLENECK = 32
+MOE_BOTTLENECK = 128
 LOAD_BALANCE_COEFFICIENT = 0.01
 REPLAY_METHOD = "periodic_replay"
+DIAGNOSTIC_WINDOWS = 4
 
 
 class SparseMoEClassifier(nn.Module):
@@ -84,12 +85,12 @@ class SparseMoEClassifier(nn.Module):
 
     def forward_with_auxiliary(
         self, images: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         logits, probabilities, routes = self._forward_components(images)
         importance = probabilities.mean(dim=0)
         load = F.one_hot(routes, num_classes=self.num_experts).float().mean(dim=0)
         auxiliary_loss = self.num_experts * torch.sum(load.detach() * importance)
-        return logits, auxiliary_loss, routes
+        return logits, auxiliary_loss, routes, probabilities
 
     def forward(self, images: torch.Tensor) -> torch.Tensor:
         return self._forward_components(images)[0]
@@ -122,7 +123,9 @@ class SparseMoEClassifier(nn.Module):
         }
 
 
-def _model_and_profile(architecture: str) -> tuple[nn.Module, dict[str, Any]]:
+def _model_and_profile(
+    architecture: str, moe_bottleneck: int = MOE_BOTTLENECK
+) -> tuple[nn.Module, dict[str, Any]]:
     if architecture == "dense":
         model = DigitMLP()
         parameters = sum(parameter.numel() for parameter in model.parameters())
@@ -137,18 +140,23 @@ def _model_and_profile(architecture: str) -> tuple[nn.Module, dict[str, Any]]:
         }
         return model, profile
     if architecture == "sparse_moe":
-        model = SparseMoEClassifier()
+        model = SparseMoEClassifier(bottleneck=moe_bottleneck)
         return model, model.parameter_profile()
     raise ValueError(f"unknown architecture: {architecture}")
 
 
 def _forward_with_auxiliary(
     model: nn.Module, images: torch.Tensor
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor | None]:
+) -> tuple[
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor | None,
+    torch.Tensor | None,
+]:
     if isinstance(model, SparseMoEClassifier):
         return model.forward_with_auxiliary(images)
     logits = model(images)
-    return logits, logits.new_zeros(()), None
+    return logits, logits.new_zeros(()), None, None
 
 
 def _route_summary(counts_by_task: list[list[int]]) -> dict[str, Any]:
@@ -170,6 +178,74 @@ def _route_summary(counts_by_task: list[list[int]]) -> dict[str, Any]:
     }
 
 
+def _diagnostic_windows(
+    route_counts: list[list[list[int]]],
+    probability_sums: list[list[list[float]]],
+    classification_loss_sums: list[list[float]],
+    auxiliary_loss_sums: list[list[float]],
+    example_counts: list[list[int]],
+) -> list[dict[str, Any]]:
+    task_diagnostics = []
+    for task_index, task in enumerate(TASKS):
+        windows = []
+        for window_index in range(DIAGNOSTIC_WINDOWS):
+            count = example_counts[task_index][window_index]
+            routes = route_counts[task_index][window_index]
+            probabilities = probability_sums[task_index][window_index]
+            route_fraction = (
+                [value / count for value in routes]
+                if count
+                else [0.0] * NUM_EXPERTS
+            )
+            mean_probability = (
+                [value / count for value in probabilities]
+                if count
+                else [0.0] * NUM_EXPERTS
+            )
+            positive = [value for value in route_fraction if value > 0]
+            entropy = -sum(value * math.log(value) for value in positive)
+            normalized_entropy = entropy / math.log(NUM_EXPERTS)
+            mean_classification_loss = (
+                classification_loss_sums[task_index][window_index] / count
+                if count
+                else None
+            )
+            mean_auxiliary_loss = (
+                auxiliary_loss_sums[task_index][window_index] / count
+                if count
+                else None
+            )
+            weighted_auxiliary_ratio = (
+                LOAD_BALANCE_COEFFICIENT
+                * mean_auxiliary_loss
+                / mean_classification_loss
+                if mean_classification_loss
+                and mean_auxiliary_loss is not None
+                else None
+            )
+            windows.append(
+                {
+                    "window": window_index,
+                    "incoming_examples": count,
+                    "route_fraction": route_fraction,
+                    "mean_router_probability": mean_probability,
+                    "normalized_route_entropy": normalized_entropy,
+                    "maximum_expert_load": max(route_fraction),
+                    "mean_classification_loss": mean_classification_loss,
+                    "mean_unweighted_auxiliary_loss": mean_auxiliary_loss,
+                    "weighted_auxiliary_to_classification_loss_ratio": weighted_auxiliary_ratio,
+                }
+            )
+        task_diagnostics.append(
+            {
+                "task_index": task_index,
+                "classes": task,
+                "windows": windows,
+            }
+        )
+    return task_diagnostics
+
+
 def run_architecture(
     architecture: str,
     train_data: MNIST,
@@ -183,9 +259,10 @@ def run_architecture(
     learning_rate: float,
     burst_interval: int,
     burst_steps: int,
+    moe_bottleneck: int,
 ) -> dict[str, Any]:
     torch.manual_seed(seed)
-    model, model_profile = _model_and_profile(architecture)
+    model, model_profile = _model_and_profile(architecture, moe_bottleneck)
     model = model.to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
     criterion = nn.CrossEntropyLoss()
@@ -198,6 +275,28 @@ def run_architecture(
     new_task_accuracy: list[float] = []
     burst_positions_by_task: dict[str, list[int]] = {}
     route_counts_by_task = torch.zeros(
+        (len(TASKS), NUM_EXPERTS), dtype=torch.long, device=device
+    )
+    route_counts_by_window = torch.zeros(
+        (len(TASKS), DIAGNOSTIC_WINDOWS, NUM_EXPERTS),
+        dtype=torch.long,
+        device=device,
+    )
+    probability_sums_by_window = torch.zeros(
+        (len(TASKS), DIAGNOSTIC_WINDOWS, NUM_EXPERTS),
+        dtype=torch.float64,
+        device=device,
+    )
+    classification_loss_sums_by_window = torch.zeros(
+        (len(TASKS), DIAGNOSTIC_WINDOWS), dtype=torch.float64, device=device
+    )
+    auxiliary_loss_sums_by_window = torch.zeros_like(
+        classification_loss_sums_by_window
+    )
+    examples_by_window = torch.zeros(
+        (len(TASKS), DIAGNOSTIC_WINDOWS), dtype=torch.long, device=device
+    )
+    replay_route_counts_by_task = torch.zeros(
         (len(TASKS), NUM_EXPERTS), dtype=torch.long, device=device
     )
 
@@ -232,21 +331,39 @@ def run_architecture(
         for epoch in range(epochs):
             for images, labels in loader:
                 task_step += 1
+                window_index = min(
+                    (task_step - 1) * DIAGNOSTIC_WINDOWS // task_steps,
+                    DIAGNOSTIC_WINDOWS - 1,
+                )
                 images = images.to(device)
                 labels = labels.to(device)
                 incoming_examples += len(labels)
 
                 optimizer.zero_grad(set_to_none=True)
-                logits, auxiliary_loss, routes = _forward_with_auxiliary(model, images)
-                loss = criterion(logits, labels)
+                logits, auxiliary_loss, routes, probabilities = _forward_with_auxiliary(
+                    model, images
+                )
+                classification_loss = criterion(logits, labels)
+                loss = classification_loss
                 if architecture == "sparse_moe":
                     loss = loss + LOAD_BALANCE_COEFFICIENT * auxiliary_loss
-                    if routes is None:
-                        raise RuntimeError("sparse MoE did not return routing decisions")
+                    if routes is None or probabilities is None:
+                        raise RuntimeError("sparse MoE did not return routing diagnostics")
                     route_counts = torch.bincount(
                         routes.detach(), minlength=NUM_EXPERTS
                     )
                     route_counts_by_task[task_index] += route_counts
+                    route_counts_by_window[task_index, window_index] += route_counts
+                    probability_sums_by_window[task_index, window_index] += (
+                        probabilities.detach().to(torch.float64).sum(dim=0)
+                    )
+                    classification_loss_sums_by_window[
+                        task_index, window_index
+                    ] += classification_loss.detach().to(torch.float64) * len(labels)
+                    auxiliary_loss_sums_by_window[
+                        task_index, window_index
+                    ] += auxiliary_loss.detach().to(torch.float64) * len(labels)
+                    examples_by_window[task_index, window_index] += len(labels)
                 loss.backward()
                 optimizer.step()
                 incoming_optimizer_steps += 1
@@ -279,14 +396,24 @@ def run_architecture(
                             device=device,
                         )
                         optimizer.zero_grad(set_to_none=True)
-                        replay_logits, replay_auxiliary, _ = _forward_with_auxiliary(
-                            model, replay_images
-                        )
+                        (
+                            replay_logits,
+                            replay_auxiliary,
+                            replay_routes,
+                            replay_probabilities,
+                        ) = _forward_with_auxiliary(model, replay_images)
                         replay_loss = criterion(replay_logits, replay_labels)
                         if architecture == "sparse_moe":
                             replay_loss = (
                                 replay_loss
                                 + LOAD_BALANCE_COEFFICIENT * replay_auxiliary
+                            )
+                            if replay_routes is None or replay_probabilities is None:
+                                raise RuntimeError(
+                                    "sparse MoE replay did not return routing diagnostics"
+                                )
+                            replay_route_counts_by_task[task_index] += torch.bincount(
+                                replay_routes.detach(), minlength=NUM_EXPERTS
                             )
                         replay_loss.backward()
                         optimizer.step()
@@ -321,6 +448,17 @@ def run_architecture(
             "maximum_expert_load_by_task": None,
         }
     )
+    diagnostics = (
+        _diagnostic_windows(
+            route_counts_by_window.cpu().tolist(),
+            probability_sums_by_window.cpu().tolist(),
+            classification_loss_sums_by_window.cpu().tolist(),
+            auxiliary_loss_sums_by_window.cpu().tolist(),
+            examples_by_window.cpu().tolist(),
+        )
+        if architecture == "sparse_moe"
+        else None
+    )
     return {
         "accuracy_matrix": accuracy_matrix,
         "new_task_accuracy": new_task_accuracy,
@@ -337,6 +475,12 @@ def run_architecture(
         "training_and_evaluation_seconds": elapsed,
         "peak_gpu_memory_mib": peak_memory,
         "model_profile": model_profile,
+        "incoming_router_diagnostics_by_task": diagnostics,
+        "replay_route_counts_by_incoming_task": (
+            replay_route_counts_by_task.cpu().tolist()
+            if architecture == "sparse_moe"
+            else None
+        ),
         **route_summary,
     }
 
@@ -511,6 +655,12 @@ def main() -> None:
     parser.add_argument("--learning-rate", type=float, default=0.05)
     parser.add_argument("--burst-interval", type=int, default=25)
     parser.add_argument("--burst-steps", type=int, default=1)
+    parser.add_argument(
+        "--moe-bottleneck",
+        type=int,
+        default=MOE_BOTTLENECK,
+        help="per-expert bottleneck width; 128 approximately matches dense active MACs",
+    )
     args = parser.parse_args()
 
     if min(
@@ -520,6 +670,7 @@ def main() -> None:
         args.memory_capacity,
         args.burst_interval,
         args.burst_steps,
+        args.moe_bottleneck,
     ) < 1:
         parser.error("epochs, batch sizes, capacities, and burst settings must be positive")
     if len(set(args.seeds)) != len(args.seeds):
@@ -532,11 +683,12 @@ def main() -> None:
     test_data = MNIST(args.data_dir, train=False, download=True, transform=ToTensor())
 
     results: dict[str, Any] = {
-        "experiment": "Phase 3: dense versus sparse MoE under periodic replay",
+        "experiment": "Phase 3 diagnostic: active-compute-matched dense versus sparse MoE",
         "scope": (
-            "Exploratory architecture pilot. It tests sparse top-1 routing under "
-            "the Phase 2 periodic replay schedule; it does not test adaptive "
-            "replay, expert growth, permanent consolidation, or LLM sleep."
+            "Exploratory diagnostic follow-up to Phase 3. Dense and MoE active "
+            "forward MACs are approximately matched; total MoE capacity is "
+            "larger. This does not test adaptive replay, expert growth, permanent "
+            "consolidation, or LLM sleep."
         ),
         "code_commit": _git_commit(),
         "configuration": {
@@ -553,9 +705,18 @@ def main() -> None:
             "replay_schedule": "periodic, no replay during first task",
             "moe_num_experts": NUM_EXPERTS,
             "moe_top_k": 1,
-            "moe_expert_bottleneck": MOE_BOTTLENECK,
+            "moe_expert_bottleneck": args.moe_bottleneck,
             "moe_load_balance_coefficient": LOAD_BALANCE_COEFFICIENT,
             "moe_load_balance_loss": "num_experts * sum(stop_gradient(load) * mean_router_probability)",
+            "router_diagnostic_windows_per_task": DIAGNOSTIC_WINDOWS,
+            "router_diagnostic_fields": [
+                "hard route fraction",
+                "mean router probability",
+                "classification loss",
+                "unweighted auxiliary loss",
+                "weighted auxiliary-to-classification loss ratio",
+            ],
+            "compute_match": "active forward MACs approximately matched; total MoE parameters larger",
         },
         "environment": {
             "device": str(device),
@@ -584,6 +745,7 @@ def main() -> None:
                 args.learning_rate,
                 args.burst_interval,
                 args.burst_steps,
+                args.moe_bottleneck,
             )
         results["runs"][str(seed)] = run
 

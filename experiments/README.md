@@ -69,3 +69,9 @@ reproduction or a replacement for the replay-scheduling thesis question. See
 [`phase-03-moe-pilot.md`](phase-03-moe-pilot.md) for the comparison and
 [`../artifacts/PHASE_03_RESULTS.md`](../artifacts/PHASE_03_RESULTS.md) for the
 five-seed Tesla T4 results.
+
+The original pilot used narrow experts and therefore did **not** match active
+compute. Its diagnostic follow-up uses 128-wide experts, approximately matches
+dense active MACs, and records router/loss signals over training. See
+[`phase-03-moe-diagnostic.md`](phase-03-moe-diagnostic.md) before interpreting
+that run.

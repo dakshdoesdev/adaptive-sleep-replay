@@ -5,6 +5,12 @@ paired seeds (42–46), three epochs per task, on a Colab Tesla T4. Both models
 used the same Split-MNIST stream, periodic replay positions, buffer contents,
 replay examples, and optimizer-step counts.
 
+**Important comparison caveat:** the original MoE expert bottleneck was 32,
+so its active model path had less capacity/compute than the dense baseline.
+This result cannot attribute the accuracy gap to MoE routing itself. A
+follow-up matches active MACs with wider experts and logs router training
+signals; see [`../experiments/phase-03-moe-diagnostic.md`](../experiments/phase-03-moe-diagnostic.md).
+
 | Model | Final average accuracy | Average forgetting | Total parameters | Active parameters / example | Estimated forward MACs / example | Mean train + eval time |
 |---|---:|---:|---:|---:|---:|---:|
 | Dense | 43.94 ± 1.71% | 68.18 ± 2.25 pp | 269,322 | 269,322 | 268,800 | 23.66 s |
