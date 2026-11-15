@@ -1,5 +1,8 @@
 # Phase 3 diagnostic follow-up: match active compute and log router collapse
 
+**Status: five-seed diagnostic run complete.** See
+[`../artifacts/PHASE_03_DIAGNOSTIC_RESULTS.md`](../artifacts/PHASE_03_DIAGNOSTIC_RESULTS.md).
+
 **Purpose:** Correct two limits of the original Phase 3 pilot. The original
 MoE used a 32-wide bottleneck per expert, so its active path was substantially
 smaller than the dense model. It also logged only task-aggregate hard routing,

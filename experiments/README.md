@@ -74,4 +74,5 @@ The original pilot used narrow experts and therefore did **not** match active
 compute. Its diagnostic follow-up uses 128-wide experts, approximately matches
 dense active MACs, and records router/loss signals over training. See
 [`phase-03-moe-diagnostic.md`](phase-03-moe-diagnostic.md) before interpreting
-that run.
+that run, and [`../artifacts/PHASE_03_DIAGNOSTIC_RESULTS.md`](../artifacts/PHASE_03_DIAGNOSTIC_RESULTS.md)
+for the five-seed RTX 3050 result.
