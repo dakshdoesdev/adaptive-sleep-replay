@@ -81,6 +81,45 @@ class BaselineMetricTests(unittest.TestCase):
             make_plot(result, plot)
             self.assertTrue(plot.is_file())
 
+    def test_paired_aggregation_summarizes_seed_variable_replay_cost(self) -> None:
+        def entry(replay_examples: int, optimizer_steps: int) -> dict:
+            return {
+                "accuracy_matrix": [[0.5] * 5 for _ in range(5)],
+                "final_average_accuracy": 0.5,
+                "average_forgetting": 0.2,
+                "new_task_accuracy": [0.8] * 5,
+                "incoming_training_examples": 60_000,
+                "replay_examples": replay_examples,
+                "optimizer_steps": optimizer_steps,
+                "replay_buffer_capacity": 500,
+                "training_and_evaluation_seconds": 10.0,
+            }
+
+        runs = {
+            "1": {
+                "methods": {
+                    "sequential": entry(0, 471),
+                    "uniform_replay": entry(100, 474),
+                }
+            },
+            "2": {
+                "methods": {
+                    "sequential": entry(0, 471),
+                    "uniform_replay": entry(200, 477),
+                }
+            },
+        }
+        result = aggregate_runs(
+            runs,
+            variable_metrics=("replay_examples", "optimizer_steps"),
+        )
+        self.assertEqual(result["methods"]["uniform_replay"]["replay_examples"], 150)
+        self.assertAlmostEqual(
+            result["methods"]["uniform_replay"]["replay_examples_std"],
+            70.71067811865476,
+        )
+        self.assertEqual(result["methods"]["uniform_replay"]["optimizer_steps"], 475.5)
+
 
 if __name__ == "__main__":
     unittest.main()

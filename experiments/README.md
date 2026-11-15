@@ -76,3 +76,30 @@ dense active MACs, and records router/loss signals over training. See
 [`phase-03-moe-diagnostic.md`](phase-03-moe-diagnostic.md) before interpreting
 that run, and [`../artifacts/PHASE_03_DIAGNOSTIC_RESULTS.md`](../artifacts/PHASE_03_DIAGNOSTIC_RESULTS.md)
 for the five-seed RTX 3050 result.
+
+The MoE runner also exposes training-only Gaussian router-logit noise and a
+router z-loss (`mean(logsumexp(raw_logits) ** 2)`) for a small anti-collapse
+ablation. Both default to zero, preserving the original pilot. See the options
+`--router-noise-std` and `--router-z-loss-coefficient`; noise is disabled during
+evaluation.
+
+## Phase 4: adaptive replay triggers
+
+[`phase4_adaptive_replay.py`](phase4_adaptive_replay.py) compares periodic
+bursts with fixed-probe loss-spike and gradient-conflict triggers. The probe is
+reserved within the 500-example memory capacity; adaptive methods have a
+maximum of 43 bursts, a 25-step cooldown, and detailed trigger-cost accounting.
+Adaptive realized replay counts may be lower than the periodic control, so
+this pilot is not itself a matched-replay-count or matched-total-compute
+result. Protocol and interpretation: [`phase-04-adaptive-replay.md`](phase-04-adaptive-replay.md).
+
+```bash
+python experiments/phase4_adaptive_replay.py \
+  --epochs 3 --seeds 42 43 44 45 46 \
+  --out artifacts/phase_04_adaptive_replay_rtx3050.json \
+  --plot artifacts/phase_04_adaptive_replay_rtx3050.png
+```
+
+The default seeds and trigger thresholds are exploratory pilot settings.
+Threshold selection for a final thesis comparison must use development streams
+before held-out evaluation.

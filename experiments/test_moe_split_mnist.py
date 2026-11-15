@@ -27,11 +27,29 @@ class SparseMoETests(unittest.TestCase):
     def test_auxiliary_and_task_losses_backpropagate_to_router_and_expert(self) -> None:
         model = SparseMoEClassifier()
         images = torch.randn(8, 1, 28, 28)
-        logits, auxiliary_loss, _, _ = model.forward_with_auxiliary(images)
+        logits, auxiliary_loss, router_z_loss, _, _ = model.forward_with_regularizers(
+            images
+        )
         loss = torch.nn.functional.cross_entropy(logits, torch.randint(0, 10, (8,)))
-        (loss + 0.01 * auxiliary_loss).backward()
+        (loss + 0.01 * auxiliary_loss + 0.001 * router_z_loss).backward()
         self.assertIsNotNone(model.router.weight.grad)
         self.assertTrue(any(expert[0].weight.grad is not None for expert in model.experts))
+        self.assertTrue(torch.isfinite(router_z_loss))
+
+    def test_router_noise_is_training_only(self) -> None:
+        model = SparseMoEClassifier(router_noise_std=0.5)
+        images = torch.randn(16, 1, 28, 28)
+        model.train()
+        torch.manual_seed(1)
+        train_probabilities_a = model.forward_with_regularizers(images)[-1]
+        torch.manual_seed(2)
+        train_probabilities_b = model.forward_with_regularizers(images)[-1]
+        self.assertFalse(torch.allclose(train_probabilities_a, train_probabilities_b))
+
+        model.eval()
+        eval_probabilities_a = model.forward_with_regularizers(images)[-1]
+        eval_probabilities_b = model.forward_with_regularizers(images)[-1]
+        self.assertTrue(torch.equal(eval_probabilities_a, eval_probabilities_b))
 
     def test_sparse_moe_matches_dense_active_macs_but_expands_total_capacity(self) -> None:
         dense, dense_profile = _model_and_profile("dense")

@@ -36,6 +36,8 @@ ARCHITECTURES = ("dense", "sparse_moe")
 NUM_EXPERTS = 4
 MOE_BOTTLENECK = 128
 LOAD_BALANCE_COEFFICIENT = 0.01
+ROUTER_Z_LOSS_COEFFICIENT = 0.0
+ROUTER_NOISE_STD = 0.0
 REPLAY_METHOD = "periodic_replay"
 DIAGNOSTIC_WINDOWS = 4
 
@@ -45,8 +47,11 @@ class SparseMoEClassifier(nn.Module):
         self,
         num_experts: int = NUM_EXPERTS,
         bottleneck: int = MOE_BOTTLENECK,
+        router_noise_std: float = ROUTER_NOISE_STD,
     ) -> None:
         super().__init__()
+        if router_noise_std < 0:
+            raise ValueError("router_noise_std must be non-negative")
         self.input_layer = nn.Linear(28 * 28, 256)
         self.router = nn.Linear(256, num_experts)
         self.experts = nn.ModuleList(
@@ -62,12 +67,18 @@ class SparseMoEClassifier(nn.Module):
         self.output_layer = nn.Linear(256, 10)
         self.num_experts = num_experts
         self.bottleneck = bottleneck
+        self.router_noise_std = router_noise_std
 
     def _forward_components(
         self, images: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         hidden = F.relu(self.input_layer(images.flatten(start_dim=1)))
-        probabilities = self.router(hidden).softmax(dim=-1)
+        router_logits = self.router(hidden)
+        router_z_loss = torch.logsumexp(router_logits, dim=-1).square().mean()
+        routing_logits = router_logits
+        if self.training and self.router_noise_std > 0:
+            routing_logits = router_logits + torch.randn_like(router_logits) * self.router_noise_std
+        probabilities = routing_logits.softmax(dim=-1)
         routes = probabilities.argmax(dim=-1)
         selected_gates = probabilities.gather(1, routes.unsqueeze(1))
         expert_outputs = torch.zeros_like(hidden)
@@ -81,16 +92,30 @@ class SparseMoEClassifier(nn.Module):
             expert_outputs = expert_outputs.index_copy(0, token_indices, selected)
 
         logits = self.output_layer(F.relu(expert_outputs))
-        return logits, probabilities, routes
+        return logits, probabilities, routes, router_z_loss
 
     def forward_with_auxiliary(
         self, images: torch.Tensor
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        logits, probabilities, routes = self._forward_components(images)
+        logits, auxiliary_loss, _, routes, probabilities = self.forward_with_regularizers(
+            images
+        )
+        return logits, auxiliary_loss, routes, probabilities
+
+    def forward_with_regularizers(
+        self, images: torch.Tensor
+    ) -> tuple[
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+    ]:
+        logits, probabilities, routes, router_z_loss = self._forward_components(images)
         importance = probabilities.mean(dim=0)
         load = F.one_hot(routes, num_classes=self.num_experts).float().mean(dim=0)
         auxiliary_loss = self.num_experts * torch.sum(load.detach() * importance)
-        return logits, auxiliary_loss, routes, probabilities
+        return logits, auxiliary_loss, router_z_loss, routes, probabilities
 
     def forward(self, images: torch.Tensor) -> torch.Tensor:
         return self._forward_components(images)[0]
@@ -124,7 +149,9 @@ class SparseMoEClassifier(nn.Module):
 
 
 def _model_and_profile(
-    architecture: str, moe_bottleneck: int = MOE_BOTTLENECK
+    architecture: str,
+    moe_bottleneck: int = MOE_BOTTLENECK,
+    router_noise_std: float = ROUTER_NOISE_STD,
 ) -> tuple[nn.Module, dict[str, Any]]:
     if architecture == "dense":
         model = DigitMLP()
@@ -140,7 +167,9 @@ def _model_and_profile(
         }
         return model, profile
     if architecture == "sparse_moe":
-        model = SparseMoEClassifier(bottleneck=moe_bottleneck)
+        model = SparseMoEClassifier(
+            bottleneck=moe_bottleneck, router_noise_std=router_noise_std
+        )
         return model, model.parameter_profile()
     raise ValueError(f"unknown architecture: {architecture}")
 
@@ -150,13 +179,15 @@ def _forward_with_auxiliary(
 ) -> tuple[
     torch.Tensor,
     torch.Tensor,
+    torch.Tensor,
     torch.Tensor | None,
     torch.Tensor | None,
 ]:
     if isinstance(model, SparseMoEClassifier):
-        return model.forward_with_auxiliary(images)
+        return model.forward_with_regularizers(images)
     logits = model(images)
-    return logits, logits.new_zeros(()), None, None
+    zero = logits.new_zeros(())
+    return logits, zero, zero, None, None
 
 
 def _route_summary(counts_by_task: list[list[int]]) -> dict[str, Any]:
@@ -184,6 +215,8 @@ def _diagnostic_windows(
     classification_loss_sums: list[list[float]],
     auxiliary_loss_sums: list[list[float]],
     example_counts: list[list[int]],
+    router_z_loss_sums: list[list[float]] | None = None,
+    router_z_loss_coefficient: float = ROUTER_Z_LOSS_COEFFICIENT,
 ) -> list[dict[str, Any]]:
     task_diagnostics = []
     for task_index, task in enumerate(TASKS):
@@ -215,12 +248,24 @@ def _diagnostic_windows(
                 if count
                 else None
             )
+            mean_router_z_loss = (
+                router_z_loss_sums[task_index][window_index] / count
+                if router_z_loss_sums is not None and count
+                else None
+            )
             weighted_auxiliary_ratio = (
                 LOAD_BALANCE_COEFFICIENT
                 * mean_auxiliary_loss
                 / mean_classification_loss
                 if mean_classification_loss
                 and mean_auxiliary_loss is not None
+                else None
+            )
+            weighted_router_z_ratio = (
+                router_z_loss_coefficient
+                * mean_router_z_loss
+                / mean_classification_loss
+                if mean_classification_loss and mean_router_z_loss is not None
                 else None
             )
             windows.append(
@@ -234,6 +279,8 @@ def _diagnostic_windows(
                     "mean_classification_loss": mean_classification_loss,
                     "mean_unweighted_auxiliary_loss": mean_auxiliary_loss,
                     "weighted_auxiliary_to_classification_loss_ratio": weighted_auxiliary_ratio,
+                    "mean_router_z_loss": mean_router_z_loss,
+                    "weighted_router_z_to_classification_loss_ratio": weighted_router_z_ratio,
                 }
             )
         task_diagnostics.append(
@@ -260,9 +307,13 @@ def run_architecture(
     burst_interval: int,
     burst_steps: int,
     moe_bottleneck: int,
+    router_noise_std: float = ROUTER_NOISE_STD,
+    router_z_loss_coefficient: float = ROUTER_Z_LOSS_COEFFICIENT,
 ) -> dict[str, Any]:
     torch.manual_seed(seed)
-    model, model_profile = _model_and_profile(architecture, moe_bottleneck)
+    model, model_profile = _model_and_profile(
+        architecture, moe_bottleneck, router_noise_std
+    )
     model = model.to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
     criterion = nn.CrossEntropyLoss()
@@ -291,6 +342,9 @@ def run_architecture(
         (len(TASKS), DIAGNOSTIC_WINDOWS), dtype=torch.float64, device=device
     )
     auxiliary_loss_sums_by_window = torch.zeros_like(
+        classification_loss_sums_by_window
+    )
+    router_z_loss_sums_by_window = torch.zeros_like(
         classification_loss_sums_by_window
     )
     examples_by_window = torch.zeros(
@@ -340,13 +394,21 @@ def run_architecture(
                 incoming_examples += len(labels)
 
                 optimizer.zero_grad(set_to_none=True)
-                logits, auxiliary_loss, routes, probabilities = _forward_with_auxiliary(
-                    model, images
-                )
+                (
+                    logits,
+                    auxiliary_loss,
+                    router_z_loss,
+                    routes,
+                    probabilities,
+                ) = _forward_with_auxiliary(model, images)
                 classification_loss = criterion(logits, labels)
                 loss = classification_loss
                 if architecture == "sparse_moe":
-                    loss = loss + LOAD_BALANCE_COEFFICIENT * auxiliary_loss
+                    loss = (
+                        loss
+                        + LOAD_BALANCE_COEFFICIENT * auxiliary_loss
+                        + router_z_loss_coefficient * router_z_loss
+                    )
                     if routes is None or probabilities is None:
                         raise RuntimeError("sparse MoE did not return routing diagnostics")
                     route_counts = torch.bincount(
@@ -363,6 +425,9 @@ def run_architecture(
                     auxiliary_loss_sums_by_window[
                         task_index, window_index
                     ] += auxiliary_loss.detach().to(torch.float64) * len(labels)
+                    router_z_loss_sums_by_window[
+                        task_index, window_index
+                    ] += router_z_loss.detach().to(torch.float64) * len(labels)
                     examples_by_window[task_index, window_index] += len(labels)
                 loss.backward()
                 optimizer.step()
@@ -399,6 +464,7 @@ def run_architecture(
                         (
                             replay_logits,
                             replay_auxiliary,
+                            replay_router_z_loss,
                             replay_routes,
                             replay_probabilities,
                         ) = _forward_with_auxiliary(model, replay_images)
@@ -407,6 +473,7 @@ def run_architecture(
                             replay_loss = (
                                 replay_loss
                                 + LOAD_BALANCE_COEFFICIENT * replay_auxiliary
+                                + router_z_loss_coefficient * replay_router_z_loss
                             )
                             if replay_routes is None or replay_probabilities is None:
                                 raise RuntimeError(
@@ -455,6 +522,8 @@ def run_architecture(
             classification_loss_sums_by_window.cpu().tolist(),
             auxiliary_loss_sums_by_window.cpu().tolist(),
             examples_by_window.cpu().tolist(),
+            router_z_loss_sums_by_window.cpu().tolist(),
+            router_z_loss_coefficient,
         )
         if architecture == "sparse_moe"
         else None
@@ -475,6 +544,12 @@ def run_architecture(
         "training_and_evaluation_seconds": elapsed,
         "peak_gpu_memory_mib": peak_memory,
         "model_profile": model_profile,
+        "router_noise_std": (
+            router_noise_std if architecture == "sparse_moe" else 0.0
+        ),
+        "router_z_loss_coefficient": (
+            router_z_loss_coefficient if architecture == "sparse_moe" else 0.0
+        ),
         "incoming_router_diagnostics_by_task": diagnostics,
         "replay_route_counts_by_incoming_task": (
             replay_route_counts_by_task.cpu().tolist()
@@ -661,6 +736,18 @@ def main() -> None:
         default=MOE_BOTTLENECK,
         help="per-expert bottleneck width; 128 approximately matches dense active MACs",
     )
+    parser.add_argument(
+        "--router-noise-std",
+        type=float,
+        default=ROUTER_NOISE_STD,
+        help="Gaussian exploration noise standard deviation on training router logits",
+    )
+    parser.add_argument(
+        "--router-z-loss-coefficient",
+        type=float,
+        default=ROUTER_Z_LOSS_COEFFICIENT,
+        help="coefficient for mean squared log-sum-exp of raw router logits",
+    )
     args = parser.parse_args()
 
     if min(
@@ -673,6 +760,8 @@ def main() -> None:
         args.moe_bottleneck,
     ) < 1:
         parser.error("epochs, batch sizes, capacities, and burst settings must be positive")
+    if args.router_noise_std < 0 or args.router_z_loss_coefficient < 0:
+        parser.error("router noise and z-loss coefficients must be non-negative")
     if len(set(args.seeds)) != len(args.seeds):
         parser.error("seeds must be unique")
 
@@ -682,13 +771,29 @@ def main() -> None:
     train_data = MNIST(args.data_dir, train=True, download=True, transform=ToTensor())
     test_data = MNIST(args.data_dir, train=False, download=True, transform=ToTensor())
 
+    router_ablation = (
+        args.router_noise_std > 0 or args.router_z_loss_coefficient > 0
+    )
     results: dict[str, Any] = {
-        "experiment": "Phase 3 diagnostic: active-compute-matched dense versus sparse MoE",
+        "experiment": (
+            "Phase 3c: router noise and z-loss anti-collapse pilot"
+            if router_ablation
+            else "Phase 3 diagnostic: active-compute-matched dense versus sparse MoE"
+        ),
         "scope": (
-            "Exploratory diagnostic follow-up to Phase 3. Dense and MoE active "
-            "forward MACs are approximately matched; total MoE capacity is "
-            "larger. This does not test adaptive replay, expert growth, permanent "
-            "consolidation, or LLM sleep."
+            (
+                "Exploratory one-configuration router intervention pilot. "
+                "Dense and sparse MoE active forward MACs are approximately "
+                "matched; total MoE capacity is larger. This is not a controlled "
+                "multi-seed ablation and does not establish a general fix."
+            )
+            if router_ablation
+            else (
+                "Exploratory diagnostic follow-up to Phase 3. Dense and MoE active "
+                "forward MACs are approximately matched; total MoE capacity is "
+                "larger. This does not test adaptive replay, expert growth, permanent "
+                "consolidation, or LLM sleep."
+            )
         ),
         "code_commit": _git_commit(),
         "configuration": {
@@ -708,6 +813,10 @@ def main() -> None:
             "moe_expert_bottleneck": args.moe_bottleneck,
             "moe_load_balance_coefficient": LOAD_BALANCE_COEFFICIENT,
             "moe_load_balance_loss": "num_experts * sum(stop_gradient(load) * mean_router_probability)",
+            "router_noise_std": args.router_noise_std,
+            "router_noise_policy": "Gaussian logit noise during training only; evaluation is deterministic",
+            "router_z_loss_coefficient": args.router_z_loss_coefficient,
+            "router_z_loss": "mean(square(logsumexp(raw router logits)))",
             "router_diagnostic_windows_per_task": DIAGNOSTIC_WINDOWS,
             "router_diagnostic_fields": [
                 "hard route fraction",
@@ -715,6 +824,8 @@ def main() -> None:
                 "classification loss",
                 "unweighted auxiliary loss",
                 "weighted auxiliary-to-classification loss ratio",
+                "mean raw-logit router z-loss",
+                "weighted z-loss-to-classification loss ratio",
             ],
             "compute_match": "active forward MACs approximately matched; total MoE parameters larger",
         },
@@ -746,6 +857,8 @@ def main() -> None:
                 args.burst_interval,
                 args.burst_steps,
                 args.moe_bottleneck,
+                args.router_noise_std,
+                args.router_z_loss_coefficient,
             )
         results["runs"][str(seed)] = run
 

@@ -61,6 +61,7 @@ def aggregate_runs(
     runs: dict[str, dict[str, Any]],
     methods_to_aggregate: tuple[str, ...] = METHODS,
     comparison: tuple[str, str] = ("sequential", "uniform_replay"),
+    variable_metrics: tuple[str, ...] = (),
 ) -> dict[str, Any]:
     methods = {}
     for method in methods_to_aggregate:
@@ -106,10 +107,19 @@ def aggregate_runs(
             "optimizer_steps",
             "replay_buffer_capacity",
         ):
-            values = {entry[metric] for entry in entries}
-            if len(values) != 1:
-                raise ValueError(f"{metric} differs across paired seeds: {values}")
-            result[metric] = values.pop()
+            values = [entry[metric] for entry in entries]
+            if metric in variable_metrics:
+                result[metric] = statistics.mean(values)
+                result[f"{metric}_std"] = (
+                    statistics.stdev(values) if len(values) > 1 else None
+                )
+            else:
+                unique_values = set(values)
+                if len(unique_values) != 1:
+                    raise ValueError(
+                        f"{metric} differs across paired seeds: {unique_values}"
+                    )
+                result[metric] = unique_values.pop()
         for metric in (
             "incoming_optimizer_steps",
             "replay_bursts",
@@ -120,12 +130,19 @@ def aggregate_runs(
             if any(present) and not all(present):
                 raise ValueError(f"{metric} is missing from some paired seeds")
             if all(present):
-                values = {entry[metric] for entry in entries}
-                if len(values) != 1:
-                    raise ValueError(
-                        f"{metric} differs across paired seeds: {values}"
+                values = [entry[metric] for entry in entries]
+                if metric in variable_metrics:
+                    result[metric] = statistics.mean(values)
+                    result[f"{metric}_std"] = (
+                        statistics.stdev(values) if len(values) > 1 else None
                     )
-                result[metric] = values.pop()
+                else:
+                    unique_values = set(values)
+                    if len(unique_values) != 1:
+                        raise ValueError(
+                            f"{metric} differs across paired seeds: {unique_values}"
+                        )
+                    result[metric] = unique_values.pop()
         result["mean_training_and_evaluation_seconds"] = statistics.mean(
             entry["training_and_evaluation_seconds"] for entry in entries
         )
