@@ -81,7 +81,8 @@ The MoE runner also exposes training-only Gaussian router-logit noise and a
 router z-loss (`mean(logsumexp(raw_logits) ** 2)`) for a small anti-collapse
 ablation. Both default to zero, preserving the original pilot. See the options
 `--router-noise-std` and `--router-z-loss-coefficient`; noise is disabled during
-evaluation.
+evaluation. The one-seed RTX 3050 result and limitations are in
+[`../artifacts/PHASE_03C_ROUTER_RESULTS.md`](../artifacts/PHASE_03C_ROUTER_RESULTS.md).
 
 ## Phase 4: adaptive replay triggers
 

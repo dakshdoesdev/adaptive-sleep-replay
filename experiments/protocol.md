@@ -1,6 +1,9 @@
 # Draft experimental protocol
 
-Status: proposed, not executed. Freeze the primary protocol after pilot work and before final evaluation.
+Status: draft protocol; final evaluation is not complete. An exploratory Phase 4
+pilot has been run, but it does not complete the matched-replay or
+matched-total-compute evaluations described here. Freeze the final protocol
+after development-only tuning and before held-out evaluation.
 
 ## Primary question
 At equal memory and incoming-data exposure, do loss-triggered or gradient-triggered replay bursts improve the accuracy/total-compute frontier over tuned periodic bursts?
@@ -46,5 +49,10 @@ Aim for five paired seeds for final comparisons; pilot runtime before committing
 ## Essential validity checks before experiments
 Assert buffer capacity; no test examples enter training/probes; random timing does not depend on test outcomes; incoming sample counts match intended protocol; budgets are enforced; accuracy matrix and metrics have hand-checked examples; trigger-disabled runs reduce to the expected baseline.
 
-## Results artifacts to produce later
+## Results artifacts and remaining deliverables
 Accuracy-versus-compute curves; old/new accuracy over time; trigger timeline; signal-versus-subsequent held-out loss association (analysis only); threshold/check-frequency sensitivity; runtime breakdown; seed-level results. Empty results should remain empty until measured.
+
+The exploratory adaptive-trigger pilot and its raw seed-level artifact are
+documented in [`../artifacts/PHASE_04_RESULTS.md`](../artifacts/PHASE_04_RESULTS.md).
+The matched-replay, matched-total-compute, held-out development/final split,
+and scale-up deliverables remain outstanding.

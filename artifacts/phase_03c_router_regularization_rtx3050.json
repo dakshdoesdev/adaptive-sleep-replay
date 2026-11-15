@@ -1,0 +1,1218 @@
+{
+  "experiment": "Phase 3c: router noise and z-loss anti-collapse pilot",
+  "scope": "Exploratory one-configuration router intervention pilot. Dense and sparse MoE active forward MACs are approximately matched; total MoE capacity is larger. This is not a controlled multi-seed ablation and does not establish a general fix.",
+  "code_commit": "17be479",
+  "configuration": {
+    "seeds": [
+      42
+    ],
+    "task_order": [
+      [
+        0,
+        1
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        4,
+        5
+      ],
+      [
+        6,
+        7
+      ],
+      [
+        8,
+        9
+      ]
+    ],
+    "epochs_per_task": 3,
+    "batch_size": 128,
+    "memory_capacity": 500,
+    "replay_batch_size": 32,
+    "burst_interval": 25,
+    "burst_steps": 1,
+    "learning_rate": 0.05,
+    "test_classes_masked": false,
+    "replay_schedule": "periodic, no replay during first task",
+    "moe_num_experts": 4,
+    "moe_top_k": 1,
+    "moe_expert_bottleneck": 128,
+    "moe_load_balance_coefficient": 0.01,
+    "moe_load_balance_loss": "num_experts * sum(stop_gradient(load) * mean_router_probability)",
+    "router_noise_std": 0.1,
+    "router_noise_policy": "Gaussian logit noise during training only; evaluation is deterministic",
+    "router_z_loss_coefficient": 0.001,
+    "router_z_loss": "mean(square(logsumexp(raw router logits)))",
+    "router_diagnostic_windows_per_task": 4,
+    "router_diagnostic_fields": [
+      "hard route fraction",
+      "mean router probability",
+      "classification loss",
+      "unweighted auxiliary loss",
+      "weighted auxiliary-to-classification loss ratio",
+      "mean raw-logit router z-loss",
+      "weighted z-loss-to-classification loss ratio"
+    ],
+    "compute_match": "active forward MACs approximately matched; total MoE parameters larger"
+  },
+  "environment": {
+    "device": "cuda",
+    "torch_version": "2.11.0+cu130",
+    "cuda_version": "13.0",
+    "gpu_name": "NVIDIA GeForce RTX 3050 Laptop GPU"
+  },
+  "runs": {
+    "42": {
+      "methods": {
+        "dense": {
+          "accuracy_matrix": [
+            [
+              0.9990543735224586,
+              null,
+              null,
+              null,
+              null
+            ],
+            [
+              0.7848699763593381,
+              0.9725759059745348,
+              null,
+              null,
+              null
+            ],
+            [
+              0.5044917257683215,
+              0.03232125367286973,
+              0.9909284951974386,
+              null,
+              null
+            ],
+            [
+              0.7300236406619386,
+              0.3614103819784525,
+              0.29722518676627535,
+              0.9909365558912386,
+              null
+            ],
+            [
+              0.7914893617021277,
+              0.10381978452497552,
+              0.0,
+              0.3298086606243706,
+              0.9722642460917801
+            ]
+          ],
+          "new_task_accuracy": [
+            0.9990543735224586,
+            0.9725759059745348,
+            0.9909284951974386,
+            0.9909365558912386,
+            0.9722642460917801
+          ],
+          "final_average_accuracy": 0.4394764105886508,
+          "average_forgetting": 0.6820943809335492,
+          "incoming_training_examples": 180000,
+          "incoming_optimizer_steps": 1413,
+          "replay_examples": 1376,
+          "replay_bursts": 43,
+          "replay_optimizer_steps": 43,
+          "optimizer_steps": 1456,
+          "replay_buffer_capacity": 500,
+          "monitoring_passes": 0,
+          "replay_burst_positions_by_task": {
+            "0": [],
+            "1": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ],
+            "2": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250
+            ],
+            "3": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ],
+            "4": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ]
+          },
+          "training_and_evaluation_seconds": 14.94261040099991,
+          "peak_gpu_memory_mib": 22.3466796875,
+          "model_profile": {
+            "total_parameters": 269322,
+            "active_parameters_per_example": 269322,
+            "estimated_forward_macs_per_example": 268800,
+            "num_experts": 0,
+            "top_k": 0,
+            "expert_bottleneck": null
+          },
+          "router_noise_std": 0.0,
+          "router_z_loss_coefficient": 0.0,
+          "incoming_router_diagnostics_by_task": null,
+          "replay_route_counts_by_incoming_task": null,
+          "incoming_route_fraction_by_task": null,
+          "normalized_route_entropy_by_task": null,
+          "maximum_expert_load_by_task": null
+        },
+        "sparse_moe": {
+          "accuracy_matrix": [
+            [
+              0.9981087470449173,
+              null,
+              null,
+              null,
+              null
+            ],
+            [
+              0.5914893617021276,
+              0.9696376101860921,
+              null,
+              null,
+              null
+            ],
+            [
+              0.4888888888888889,
+              0.0,
+              0.991462113127001,
+              null,
+              null
+            ],
+            [
+              0.40756501182033095,
+              0.21253672869735554,
+              0.24813233724653147,
+              0.9909365558912386,
+              null
+            ],
+            [
+              0.425531914893617,
+              0.012242899118511263,
+              0.0,
+              0.2799597180261833,
+              0.9747856782652546
+            ]
+          ],
+          "new_task_accuracy": [
+            0.9981087470449173,
+            0.9696376101860921,
+            0.991462113127001,
+            0.9909365558912386,
+            0.9747856782652546
+          ],
+          "final_average_accuracy": 0.3385040420607132,
+          "average_forgetting": 0.8081026235527344,
+          "incoming_training_examples": 180000,
+          "incoming_optimizer_steps": 1413,
+          "replay_examples": 1376,
+          "replay_bursts": 43,
+          "replay_optimizer_steps": 43,
+          "optimizer_steps": 1456,
+          "replay_buffer_capacity": 500,
+          "monitoring_passes": 0,
+          "replay_burst_positions_by_task": {
+            "0": [],
+            "1": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ],
+            "2": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250
+            ],
+            "3": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ],
+            "4": [
+              25,
+              50,
+              75,
+              100,
+              125,
+              150,
+              175,
+              200,
+              225,
+              250,
+              275
+            ]
+          },
+          "training_and_evaluation_seconds": 17.374940255000183,
+          "peak_gpu_memory_mib": 24.392578125,
+          "model_profile": {
+            "total_parameters": 468238,
+            "active_parameters_per_example": 270478,
+            "estimated_forward_macs_per_example": 269824,
+            "num_experts": 4,
+            "top_k": 1,
+            "expert_bottleneck": 128
+          },
+          "router_noise_std": 0.1,
+          "router_z_loss_coefficient": 0.001,
+          "incoming_router_diagnostics_by_task": [
+            {
+              "task_index": 0,
+              "classes": [
+                0,
+                1
+              ],
+              "windows": [
+                {
+                  "window": 0,
+                  "incoming_examples": 9600,
+                  "route_fraction": [
+                    0.15270833333333333,
+                    0.20229166666666668,
+                    0.30270833333333336,
+                    0.34229166666666666
+                  ],
+                  "mean_router_probability": [
+                    0.24185754785779864,
+                    0.2457868907880038,
+                    0.2549187011256193,
+                    0.25743686022547385
+                  ],
+                  "normalized_route_entropy": 0.9658445031971478,
+                  "maximum_expert_load": 0.34229166666666666,
+                  "mean_classification_loss": 1.701822215716044,
+                  "mean_unweighted_auxiliary_loss": 1.0100922854741414,
+                  "weighted_auxiliary_to_classification_loss_ratio": 0.005935357266735079,
+                  "mean_router_z_loss": 1.931789182027181,
+                  "weighted_router_z_to_classification_loss_ratio": 0.0011351298415236506
+                },
+                {
+                  "window": 1,
+                  "incoming_examples": 9465,
+                  "route_fraction": [
+                    0.01954569466455362,
+                    0.04141574220813524,
+                    0.04648705758055996,
+                    0.8925515055467512
+                  ],
+                  "mean_router_probability": [
+                    0.16034829318955737,
+                    0.17011683794701293,
+                    0.17176983787452363,
+                    0.4977650304021372
+                  ],
+                  "normalized_route_entropy": 0.32669146062148496,
+                  "maximum_expert_load": 0.8925515055467512,
+                  "mean_classification_loss": 0.8254342969611279,
+                  "mean_unweighted_auxiliary_loss": 1.9542894173096679,
+                  "weighted_auxiliary_to_classification_loss_ratio": 0.02367589309657315,
+                  "mean_router_z_loss": 3.580351849856732,
+                  "weighted_router_z_to_classification_loss_ratio": 0.0043375370553876335
+                },
+                {
+                  "window": 2,
+                  "incoming_examples": 9465,
+                  "route_fraction": [
+                    0.00010565240359218173,
+                    0.0035921817221341787,
+                    0.0012678288431061807,
+                    0.9950343370311675
+                  ],
+                  "mean_router_probability": [
+                    0.08482416702032675,
+                    0.10420984843379336,
+                    0.09854512067882785,
+                    0.7124208644953469
+                  ],
+                  "normalized_route_entropy": 0.02495715412500454,
+                  "maximum_expert_load": 0.9950343370311675,
+                  "mean_classification_loss": 0.21221351632508914,
+                  "mean_unweighted_auxiliary_loss": 2.8399804287591564,
+                  "weighted_auxiliary_to_classification_loss_ratio": 0.13382655723062428,
+                  "mean_router_z_loss": 8.059924281695125,
+                  "weighted_router_z_to_classification_loss_ratio": 0.03798025885094027
+                },
+                {
+                  "window": 3,
+                  "incoming_examples": 9465,
+                  "route_fraction": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "mean_router_probability": [
+                    0.03240991599753293,
+                    0.04211041550076347,
+                    0.03904359848188551,
+                    0.8864360703152446
+                  ],
+                  "normalized_route_entropy": -0.0,
+                  "maximum_expert_load": 1.0,
+                  "mean_classification_loss": 0.0314738170930115,
+                  "mean_unweighted_auxiliary_loss": 3.5457442584392953,
+                  "weighted_auxiliary_to_classification_loss_ratio": 1.126569506317236,
+                  "mean_router_z_loss": 10.011795881496052,
+                  "weighted_router_z_to_classification_loss_ratio": 0.3180991950200755
+                }
+              ]
+            },
+            {
+              "task_index": 1,
+              "classes": [
+                2,
+                3
+              ],
+              "windows": [
+                {
+                  "window": 0,
+                  "incoming_examples": 9216,
+                  "route_fraction": [
+                    0.0,
+                    0.00010850694444444444,
+                    0.0,
+                    0.9998914930555556
+                  ],
+                  "mean_router_probability": [
+                    0.038175361538798254,
+                    0.03910257908793113,
+                    0.03530789702841651,
+                    0.8874141623705832
+                  ],
+                  "normalized_route_entropy": 0.000792781128921684,
+                  "maximum_expert_load": 0.9998914930555556,
+                  "mean_classification_loss": 1.2196431066840887,
+                  "mean_unweighted_auxiliary_loss": 3.549534541037348,
+                  "weighted_auxiliary_to_classification_loss_ratio": 0.02910305909642423,
+                  "mean_router_z_loss": 7.270316516359647,
+                  "weighted_router_z_to_classification_loss_ratio": 0.005961019642972327
+                },
+                {
+                  "window": 1,
+                  "incoming_examples": 9017,
+                  "route_fraction": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "mean_router_probability": [
+                    0.00933137497282245,
+                    0.009728381602090748,
+                    0.00853712385321883,
+                    0.9724031195310581
+                  ],
+                  "normalized_route_entropy": -0.0,
+                  "maximum_expert_load": 1.0,
+                  "mean_classification_loss": 0.18722612151248738,
+                  "mean_unweighted_auxiliary_loss": 3.8896124813235944,
+                  "weighted_auxiliary_to_classification_loss_ratio": 0.20774945557285232,
+                  "mean_router_z_loss": 9.086778840852627,
+                  "weighted_router_z_to_classification_loss_ratio": 0.04853371296401378
+                },
+                {
+                  "window": 2,
+                  "incoming_examples": 9017,
+                  "route_fraction": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "mean_router_probability": [
+                    0.010398159539150078,
+                    0.011013580862561942,
+                    0.009768895661907908,
+                    0.968819363465975
+                  ],
+                  "normalized_route_entropy": -0.0,
+                  "maximum_expert_load": 1.0,
+                  "mean_classification_loss": 0.11658083147010823,
+                  "mean_unweighted_auxiliary_loss": 3.8752774473858524,
+                  "weighted_auxiliary_to_classification_loss_ratio": 0.33241120332715146,
+                  "mean_router_z_loss": 6.243817506085561,
+                  "weighted_router_z_to_classification_loss_ratio": 0.05355783988971206
+                },
+                {
+                  "window": 3,
+                  "incoming_examples": 9017,
+                  "route_fraction": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "mean_router_probability": [
+                    0.012764745331548024,
+                    0.013537722244233079,
+                    0.012318565557004795,
+                    0.9613789655660676
+                  ],
+                  "normalized_route_entropy": -0.0,
+                  "maximum_expert_load": 1.0,
+                  "mean_classification_loss": 0.1173574599789928,
+                  "mean_unweighted_auxiliary_loss": 3.845515870434542,
+                  "weighted_auxiliary_to_classification_loss_ratio": 0.32767545166049916,
+                  "mean_router_z_loss": 4.018703397499348,
+                  "weighted_router_z_to_classification_loss_ratio": 0.034243271780240496
+                }
+              ]
+            },
+            {
+              "task_index": 2,
+              "classes": [
+                4,
+                5
+              ],
+              "windows": [
+                {
+                  "window": 0,
+                  "incoming_examples": 8448,
+                  "route_fraction": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "mean_router_probability": [
+                    0.03253584167779791,
+                    0.03092008788800325,
+                    0.032733450912131576,
+                    0.9038106193765998
+                  ],
+                  "normalized_route_entropy": -0.0,
+                  "maximum_expert_load": 1.0,
+                  "mean_classification_loss": 0.8517311951427748,
+                  "mean_unweighted_auxiliary_loss": 3.615242488456495,
+                  "weighted_auxiliary_to_classification_loss_ratio": 0.04244581517118762,
+                  "mean_router_z_loss": 3.0662082347906,
+                  "weighted_router_z_to_classification_loss_ratio": 0.0035999717425831924
+                },
+                {
+                  "window": 1,
+                  "incoming_examples": 8447,
+                  "route_fraction": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "mean_router_probability": [
+                    0.00998548551891992,
+                    0.009929435919986102,
+                    0.00984981996745226,
+                    0.9702352594380916
+                  ],
+                  "normalized_route_entropy": -0.0,
+                  "maximum_expert_load": 1.0,
+                  "mean_classification_loss": 0.13035253054332605,
+                  "mean_unweighted_auxiliary_loss": 3.880941043369189,
+                  "weighted_auxiliary_to_classification_loss_ratio": 0.29772655944559956,
+                  "mean_router_z_loss": 4.304754226380189,
+                  "weighted_router_z_to_classification_loss_ratio": 0.03302394060504558
+                },
+                {
+                  "window": 2,
+                  "incoming_examples": 8447,
+                  "route_fraction": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "mean_router_probability": [
+                    0.010212562286077061,
+                    0.010119741770917174,
+                    0.00988562190575336,
+                    0.9697820743160218
+                  ],
+                  "normalized_route_entropy": -0.0,
+                  "maximum_expert_load": 1.0,
+                  "mean_classification_loss": 0.08894648306169664,
+                  "mean_unweighted_auxiliary_loss": 3.87912828569174,
+                  "weighted_auxiliary_to_classification_loss_ratio": 0.4361193553882316,
+                  "mean_router_z_loss": 3.490377882718899,
+                  "weighted_router_z_to_classification_loss_ratio": 0.03924132537424601
+                },
+                {
+                  "window": 3,
+                  "incoming_examples": 8447,
+                  "route_fraction": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "mean_router_probability": [
+                    0.011397394712650603,
+                    0.0113930206863299,
+                    0.011011451556513068,
+                    0.9661981325269776
+                  ],
+                  "normalized_route_entropy": -0.0,
+                  "maximum_expert_load": 1.0,
+                  "mean_classification_loss": 0.07980614581732012,
+                  "mean_unweighted_auxiliary_loss": 3.864792523418529,
+                  "weighted_auxiliary_to_classification_loss_ratio": 0.4842725436541208,
+                  "mean_router_z_loss": 2.7283445093580094,
+                  "weighted_router_z_to_classification_loss_ratio": 0.0341871478871228
+                }
+              ]
+            },
+            {
+              "task_index": 3,
+              "classes": [
+                6,
+                7
+              ],
+              "windows": [
+                {
+                  "window": 0,
+                  "incoming_examples": 9216,
+                  "route_fraction": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "mean_router_probability": [
+                    0.018648734340887232,
+                    0.01893823824618974,
+                    0.017672242968365656,
+                    0.9447407835363669
+                  ],
+                  "normalized_route_entropy": -0.0,
+                  "maximum_expert_load": 1.0,
+                  "mean_classification_loss": 0.8135771333343453,
+                  "mean_unweighted_auxiliary_loss": 3.7789631254143186,
+                  "weighted_auxiliary_to_classification_loss_ratio": 0.046448738178354466,
+                  "mean_router_z_loss": 2.521358982556396,
+                  "weighted_router_z_to_classification_loss_ratio": 0.003099102567230372
+                },
+                {
+                  "window": 1,
+                  "incoming_examples": 9111,
+                  "route_fraction": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "mean_router_probability": [
+                    0.00827894187680408,
+                    0.008462583501467266,
+                    0.008029764884520273,
+                    0.9752287096124673
+                  ],
+                  "normalized_route_entropy": -0.0,
+                  "maximum_expert_load": 1.0,
+                  "mean_classification_loss": 0.06768116245644037,
+                  "mean_unweighted_auxiliary_loss": 3.900914807649884,
+                  "weighted_auxiliary_to_classification_loss_ratio": 0.5763664018271724,
+                  "mean_router_z_loss": 2.8882760010335047,
+                  "weighted_router_z_to_classification_loss_ratio": 0.042674739856786596
+                },
+                {
+                  "window": 2,
+                  "incoming_examples": 9111,
+                  "route_fraction": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "mean_router_probability": [
+                    0.008673425009782798,
+                    0.008955018224639288,
+                    0.008575473538655736,
+                    0.973796082359417
+                  ],
+                  "normalized_route_entropy": -0.0,
+                  "maximum_expert_load": 1.0,
+                  "mean_classification_loss": 0.04560792062813057,
+                  "mean_unweighted_auxiliary_loss": 3.895184293901236,
+                  "weighted_auxiliary_to_classification_loss_ratio": 0.8540587337144944,
+                  "mean_router_z_loss": 2.270625335823991,
+                  "weighted_router_z_to_classification_loss_ratio": 0.04978576757177325
+                },
+                {
+                  "window": 3,
+                  "incoming_examples": 9111,
+                  "route_fraction": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "mean_router_probability": [
+                    0.008789400626379241,
+                    0.009043602924467256,
+                    0.008762970132560735,
+                    0.9734040270808394
+                  ],
+                  "normalized_route_entropy": -0.0,
+                  "maximum_expert_load": 1.0,
+                  "mean_classification_loss": 0.03873507526896681,
+                  "mean_unweighted_auxiliary_loss": 3.8936161214598,
+                  "weighted_auxiliary_to_classification_loss_ratio": 1.0051913141832023,
+                  "mean_router_z_loss": 1.6945121489402268,
+                  "weighted_router_z_to_classification_loss_ratio": 0.04374619481629899
+                }
+              ]
+            },
+            {
+              "task_index": 4,
+              "classes": [
+                8,
+                9
+              ],
+              "windows": [
+                {
+                  "window": 0,
+                  "incoming_examples": 8960,
+                  "route_fraction": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "mean_router_probability": [
+                    0.014607017516858077,
+                    0.01418390375549531,
+                    0.015499385783640207,
+                    0.955709692948897
+                  ],
+                  "normalized_route_entropy": -0.0,
+                  "maximum_expert_load": 1.0,
+                  "mean_classification_loss": 0.6310480302997998,
+                  "mean_unweighted_auxiliary_loss": 3.8228387900761196,
+                  "weighted_auxiliary_to_classification_loss_ratio": 0.06057920485481836,
+                  "mean_router_z_loss": 1.2763142247285162,
+                  "weighted_router_z_to_classification_loss_ratio": 0.0020225310332117855
+                },
+                {
+                  "window": 1,
+                  "incoming_examples": 8856,
+                  "route_fraction": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "mean_router_probability": [
+                    0.007861996957509314,
+                    0.00805234135436669,
+                    0.008569995099102244,
+                    0.9755156660063803
+                  ],
+                  "normalized_route_entropy": -0.0,
+                  "maximum_expert_load": 1.0,
+                  "mean_classification_loss": 0.1505486922710461,
+                  "mean_unweighted_auxiliary_loss": 3.9020626745249842,
+                  "weighted_auxiliary_to_classification_loss_ratio": 0.259189410127838,
+                  "mean_router_z_loss": 1.3150856591821687,
+                  "weighted_router_z_to_classification_loss_ratio": 0.00873528450725101
+                },
+                {
+                  "window": 2,
+                  "incoming_examples": 8856,
+                  "route_fraction": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "mean_router_probability": [
+                    0.0075950198860853845,
+                    0.007948534007526476,
+                    0.008376653999634009,
+                    0.9760797919390862
+                  ],
+                  "normalized_route_entropy": -0.0,
+                  "maximum_expert_load": 1.0,
+                  "mean_classification_loss": 0.10666810830191868,
+                  "mean_unweighted_auxiliary_loss": 3.904319181028743,
+                  "weighted_auxiliary_to_classification_loss_ratio": 0.36602497627292363,
+                  "mean_router_z_loss": 1.0240729884618882,
+                  "weighted_router_z_to_classification_loss_ratio": 0.009600554512163106
+                },
+                {
+                  "window": 3,
+                  "incoming_examples": 8728,
+                  "route_fraction": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "mean_router_probability": [
+                    0.007941133832149021,
+                    0.008324011104301166,
+                    0.008737057995777498,
+                    0.9749977971084832
+                  ],
+                  "normalized_route_entropy": -0.0,
+                  "maximum_expert_load": 1.0,
+                  "mean_classification_loss": 0.09414502961934978,
+                  "mean_unweighted_auxiliary_loss": 3.899991155217046,
+                  "weighted_auxiliary_to_classification_loss_ratio": 0.41425353743958826,
+                  "mean_router_z_loss": 0.7673665225014131,
+                  "weighted_router_z_to_classification_loss_ratio": 0.008150897881747493
+                }
+              ]
+            }
+          ],
+          "replay_route_counts_by_incoming_task": [
+            [
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              352
+            ],
+            [
+              0,
+              0,
+              0,
+              320
+            ],
+            [
+              0,
+              0,
+              0,
+              352
+            ],
+            [
+              0,
+              0,
+              0,
+              352
+            ]
+          ],
+          "incoming_route_fraction_by_task": [
+            [
+              0.043479405184892746,
+              0.062323989998684035,
+              0.08838005000657981,
+              0.8058165548098434
+            ],
+            [
+              0.0,
+              2.7573275980919292e-05,
+              0.0,
+              0.9999724267240191
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "normalized_route_entropy_by_task": [
+            0.5032824248380737,
+            0.00022870715721039748,
+            -0.0,
+            -0.0,
+            -0.0
+          ],
+          "maximum_expert_load_by_task": [
+            0.8058165548098434,
+            0.9999724267240191,
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    }
+  },
+  "methods": {
+    "dense": {
+      "accuracy_matrix": [
+        [
+          0.9990543735224586,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          0.7848699763593381,
+          0.9725759059745348,
+          null,
+          null,
+          null
+        ],
+        [
+          0.5044917257683215,
+          0.03232125367286973,
+          0.9909284951974386,
+          null,
+          null
+        ],
+        [
+          0.7300236406619386,
+          0.3614103819784525,
+          0.29722518676627535,
+          0.9909365558912386,
+          null
+        ],
+        [
+          0.7914893617021277,
+          0.10381978452497552,
+          0.0,
+          0.3298086606243706,
+          0.9722642460917801
+        ]
+      ],
+      "accuracy_std_matrix": [
+        [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      ],
+      "final_average_accuracy": 0.4394764105886508,
+      "final_average_accuracy_std": null,
+      "average_forgetting": 0.6820943809335492,
+      "average_forgetting_std": null,
+      "mean_new_task_accuracy": 0.9851519153354902,
+      "new_task_accuracy_by_stage": [
+        0.9990543735224586,
+        0.9725759059745348,
+        0.9909284951974386,
+        0.9909365558912386,
+        0.9722642460917801
+      ],
+      "incoming_training_examples": 180000,
+      "replay_examples": 1376,
+      "optimizer_steps": 1456,
+      "replay_buffer_capacity": 500,
+      "incoming_optimizer_steps": 1413,
+      "replay_bursts": 43,
+      "replay_optimizer_steps": 43,
+      "monitoring_passes": 0,
+      "mean_training_and_evaluation_seconds": 14.94261040099991,
+      "model_profile": {
+        "total_parameters": 269322,
+        "active_parameters_per_example": 269322,
+        "estimated_forward_macs_per_example": 268800,
+        "num_experts": 0,
+        "top_k": 0,
+        "expert_bottleneck": null
+      }
+    },
+    "sparse_moe": {
+      "accuracy_matrix": [
+        [
+          0.9981087470449173,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          0.5914893617021276,
+          0.9696376101860921,
+          null,
+          null,
+          null
+        ],
+        [
+          0.4888888888888889,
+          0.0,
+          0.991462113127001,
+          null,
+          null
+        ],
+        [
+          0.40756501182033095,
+          0.21253672869735554,
+          0.24813233724653147,
+          0.9909365558912386,
+          null
+        ],
+        [
+          0.425531914893617,
+          0.012242899118511263,
+          0.0,
+          0.2799597180261833,
+          0.9747856782652546
+        ]
+      ],
+      "accuracy_std_matrix": [
+        [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      ],
+      "final_average_accuracy": 0.3385040420607132,
+      "final_average_accuracy_std": null,
+      "average_forgetting": 0.8081026235527344,
+      "average_forgetting_std": null,
+      "mean_new_task_accuracy": 0.9849861409029007,
+      "new_task_accuracy_by_stage": [
+        0.9981087470449173,
+        0.9696376101860921,
+        0.991462113127001,
+        0.9909365558912386,
+        0.9747856782652546
+      ],
+      "incoming_training_examples": 180000,
+      "replay_examples": 1376,
+      "optimizer_steps": 1456,
+      "replay_buffer_capacity": 500,
+      "incoming_optimizer_steps": 1413,
+      "replay_bursts": 43,
+      "replay_optimizer_steps": 43,
+      "monitoring_passes": 0,
+      "mean_training_and_evaluation_seconds": 17.374940255000183,
+      "model_profile": {
+        "total_parameters": 468238,
+        "active_parameters_per_example": 270478,
+        "estimated_forward_macs_per_example": 269824,
+        "num_experts": 4,
+        "top_k": 1,
+        "expert_bottleneck": 128
+      }
+    }
+  },
+  "paired_differences": {
+    "final_average_accuracy": {
+      "sparse_moe_minus_dense_by_seed": {
+        "42": -0.10097236852793756
+      },
+      "mean": -0.10097236852793756,
+      "std": null
+    },
+    "average_forgetting": {
+      "sparse_moe_minus_dense_by_seed": {
+        "42": 0.1260082426191852
+      },
+      "mean": 0.1260082426191852,
+      "std": null
+    }
+  },
+  "routing_summary": {
+    "dense": null,
+    "sparse_moe": {
+      "mean_route_fraction_by_task": [
+        [
+          0.043479405184892746,
+          0.062323989998684035,
+          0.08838005000657981,
+          0.8058165548098434
+        ],
+        [
+          0.0,
+          2.7573275980919292e-05,
+          0.0,
+          0.9999724267240191
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "route_fraction_std_by_task": [
+        [
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null
+        ]
+      ],
+      "mean_normalized_route_entropy_by_task": [
+        0.5032824248380737,
+        0.00022870715721039748,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mean_maximum_expert_load_by_task": [
+        0.8058165548098434,
+        0.9999724267240191,
+        1.0,
+        1.0,
+        1.0
+      ]
+    }
+  }
+}
